@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หน้ารวมฟอร์มการ์ดฟ้า PBD</title>
+    
+    <!-- นำเข้า Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- นำเข้า Google Fonts: Kanit -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- กำหนด Font -->
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #f0f9ff; /* สีพื้นหลังโทนฟ้าอ่อน แบบเดียวกับฟอร์ม */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div class="max-w-5xl w-full bg-white rounded-3xl shadow-xl overflow-hidden p-8 md:p-12 border border-sky-100">
+        
+        <!-- ========================================== -->
+        <!-- ส่วนหัว และ ช่องสำหรับใส่โลโก้ (Logo Section) -->
+        <!-- ========================================== -->
+        <div class="text-center mb-10 flex flex-col items-center">
+            
+            <!-- วิธีเปลี่ยนโลโก้: เปลี่ยนลิงก์ใน src="..." เป็นลิงก์รูปโลโก้ของคุณ หรือใส่ที่อยู่ไฟล์รูปเช่น src="logo.png" -->
+            <div class="mb-6 relative group cursor-pointer" title="คลิกเพื่อแก้ไข/เปลี่ยนโลโก้ในโค้ด">
+                <div class="w-40 h-40 border-4 border-dashed border-sky-300 rounded-2xl flex items-center justify-center bg-sky-50 overflow-hidden hover:bg-sky-100 transition-colors">
+                    <!-- รูปโลโก้ -->
+                    <img 
+                        src="Main.jpg" 
+                        alt="Company Logo" 
+                        class="object-contain w-full h-full p-2 group-hover:scale-105 transition-transform duration-300"
+                        id="company-logo"
+                    >
+                </div>
+                <div class="absolute -bottom-3 bg-sky-600 text-white text-xs px-3 py-1 rounded-full shadow-md left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                    PBD GROUP
+                </div>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-bold text-sky-800 mb-2">แบบฟอร์มการ์ดฟ้าPBD</h1>
+            <p class="text-gray-500 text-lg">กรุณาเลือกสาขาที่คุณต้องการกรอกข้อมูล</p>
+            <p class="text-gray-500 text-lg">หลังจากเลือกสาขา สามารถกด ⭐ หน้าฟอร์มไว้ได้</p>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ส่วนเมนูลิงก์ไปยังหน้าต่างๆ (Grid Menu) -->
+        <!-- ========================================== -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            
+            <!-- Link 1: NT -->
+            <a href="indexNT.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="NT.png" alt="NT Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม NT</span>
+            </a>
+
+            <!-- Link 2: SD -->
+            <a href="indexSD.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="SD.png" alt="SD Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม SD</span>
+            </a>
+
+            <!-- Link 3: TC -->
+            <a href="indexTC.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="TC.png" alt="TC Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม TC</span>
+            </a>
+
+            <!-- Link 4: TG -->
+            <a href="indexTG.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="TG.png" alt="TG Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม TG</span>
+            </a>
+
+            <!-- Link 5: ZH -->
+            <a href="indexZH.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="ZH.png" alt="ZH Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม ZH</span>
+            </a>
+
+            <!-- Link 6: JK -->
+            <a href="indexJK.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="JK.png" alt="JK Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม JK</span>
+            </a>
+
+            <!-- Link 7: KK -->
+            <a href="indexKK.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="kk.png" alt="KK Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม KK</span>
+            </a>
+
+            <!-- Link 8: LS -->
+            <a href="indexLS.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="LS.png" alt="LS Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม LS</span>
+            </a>
+
+            <!-- Link 9: APT -->
+            <a href="indexAPT.html" class="group flex flex-col items-center justify-center p-6 bg-white border-2 border-sky-100 rounded-2xl shadow-sm hover:shadow-lg hover:border-sky-400 hover:bg-sky-50 transition-all duration-300 transform hover:-translate-y-1">
+                <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                    <img src="APT.png" alt="APT Logo" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <span class="text-gray-700 font-medium group-hover:text-sky-700">แบบฟอร์ม APT</span>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-sm text-sky-600/70">
+        <p>&copy; 2026 ระบบการจัดการข้อมูล PBD</p>
+    </div>
+
+</body>
+</html>
