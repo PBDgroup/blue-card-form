@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR System - PBD Group</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Sarabun', sans-serif; }
+    .hidden-view { display: none !important; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a0a0a5; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex" id="body">
+
+  <!-- ========================================================================= -->
+  <!-- 1. LOGIN SCREEN -->
+  <!-- ========================================================================= -->
+  <div id="login-screen" class="min-h-screen bg-gray-100 flex items-center justify-center p-4 w-full absolute inset-0 z-50">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4" id="icon-login"></div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">เข้าสู่ระบบ</h2>
+        <p class="text-sm text-gray-500 mt-2">ระบบจัดการประวัติการสมัครงาน (HR System)</p>
+      </div>
+      <div id="login-error" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center border border-red-200">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">ชื่อผู้ใช้งาน</label>
+          <input type="text" id="login-username" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="admin / officer / emp">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+          <input type="password" id="login-password" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="password">
+        </div>
+        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+      <div class="mt-4 text-xs text-gray-400 text-center bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-1">
+        <strong>ข้อมูลทดสอบการเข้าระบบ: (รหัสผ่าน password)</strong><br/>
+        Admin: <code>admin</code> |
+        เจ้าหน้าที่: <code>officer</code><br/>
+        เจ้าหน้าที่ (Online): <code>on_off</code> |
+        เจ้าหน้าที่ (Offline): <code>off_off</code><br/>
+        พนักงาน: <code>emp</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN APP LAYOUT (Hidden initially) -->
+  <!-- ========================================================================= -->
+  <div id="app-layout" class="hidden-view flex w-full h-full relative">
+    
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-gray-900/50 z-30 hidden backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-indigo-900 text-white flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 -translate-x-full">
+      <div class="p-6 flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold tracking-wider text-indigo-200">HR System</h1>
+          <p class="text-xs text-indigo-400 mt-2 border-b border-indigo-700 pb-4">ระบบจัดการประวัติผู้สมัคร</p>
+        </div>
+        <button class="lg:hidden text-indigo-300 hover:text-white" onclick="toggleMobileMenu()" id="icon-close-menu"></button>
+      </div>
+      <div class="px-6 pb-4">
+        <div class="text-sm text-indigo-300 mb-1 truncate" id="sidebar-user-name">ผู้ใช้งาน: </div>
+        <div class="text-[10px] inline-block px-2 py-1 bg-indigo-800 rounded-full text-indigo-200 uppercase tracking-wide" id="sidebar-user-role">Role: </div>
+      </div>
+      <nav class="flex-1 mt-6 space-y-2 px-4 overflow-y-auto" id="sidebar-nav"></nav>
+      <div class="p-4 border-t border-indigo-800">
+        <button onclick="handleLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-300 hover:bg-red-900/50 hover:text-red-200 transition-colors">
+          <span id="icon-logout"></span><span>ออกจากระบบ</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50">
+      
+      <!-- Mobile Header -->
+      <div class="lg:hidden bg-indigo-900 text-white px-4 py-3 flex items-center justify-between shadow-md z-20">
+        <div class="flex items-center space-x-3">
+          <button onclick="toggleMobileMenu()" class="p-1 text-indigo-200 hover:text-white focus:outline-none" id="icon-menu"></button>
+          <h1 class="text-lg font-bold">HR System</h1>
+        </div>
+        <div class="text-xs bg-indigo-800 px-2 py-1 rounded-full truncate max-w-[120px]" id="mobile-header-name"></div>
+      </div>
+
+      <!-- Views Container -->
+      <div id="views-container" class="flex-1 overflow-auto relative">
+        <!-- Views will be injected here via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. MODALS (Global) -->
+  <!-- ========================================================================= -->
+  <div id="global-modal-container" class="hidden fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+    <!-- Modal content injected via JS -->
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <!-- ========================================================================= -->
+  <script>
+    // --- Configuration & Mock Data ---
+    const GOOGLE_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbwFkbCZQZT5NXR82SSzKPA8t0cgOiaX5xSd0ukqpV8jgTqbrFSE7G4VDOqEA-T8QuwT8w/exec'; 
+    const GOOGLE_SHEET_DOC_URL = 'https://docs.google.com/spreadsheets/d/1zwpYd-qskT6wTJdjgEFyOrh1pAUwoBc1NzmRVgRsCWk/edit?gid=1130063824#gid=1130063824';
+
+    const INITIAL_USERS = [
+      { id: 1, username: 'admin', password: 'password', role: 'admin', name: 'คุณผู้ดูแลระบบ', empCode: 'ADMIN' },
+      { id: 2, username: 'officer', password: 'password', role: 'officer', name: 'คุณเจ้าหน้าที่', empCode: 'OFFICER' },
+      { id: 3, username: 'on_off', password: 'password', role: 'OnlineOfficer', name: 'คุณเจ้าหน้าที่ (ออนไลน์)', empCode: 'ON_OFF' },
+      { id: 4, username: 'off_off', password: 'password', role: 'OfflineOfficer', name: 'คุณเจ้าหน้าที่ (ออฟไลน์)', empCode: 'OFF_OFF' },
+      { id: 5, username: 'emp', password: 'password', role: 'employee', name: 'คุณพนักงานทั่วไป', empCode: 'REF001' },
+      { id: 6, username: 'emp2', password: 'password', role: 'employee', name: 'คุณพนักงาน 2', empCode: 'REF002' },
+    ];
+
+    const MOCK_CANDIDATES = [
+      { id: 1, timestamp: '2023-10-01 09:30:00', referrerCode: 'REF001', fullName: 'สมชาย ใจดี', nickname: 'ชาย', age: 25, gender: 'ชาย', education: 'ปริญญาตรี', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขาบางนา', phone: '081-111-1111', lineId: 'somchai.j', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-05', interviewResult: 'ผ่าน', status: 'รอเริ่มงาน', startDate: '2023-10-15', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 2, timestamp: '2023-10-05 14:15:00', referrerCode: 'REF002', fullName: 'สมหญิง รักงาน', nickname: 'หญิง', age: 28, gender: 'หญิง', education: 'ปริญญาโท', interestedPosition: 'ผู้จัดการสาขา', targetBranch: 'สาขาลาดพร้าว', phone: '082-222-2222', lineId: 'somying.r', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-10', interviewResult: 'ผ่าน', status: 'ทำงานแล้ว', startDate: '2023-10-20', endDate: '-', days15: 'ผ่าน', days30: 'รอประเมิน', paidCommission: 500, paymentHistory: [{ date: '2023-11-05', amount: 500 }], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 3, timestamp: '2023-10-10 10:00:00', referrerCode: 'REF001', fullName: 'วิชัย มุ่งมั่น', nickname: 'ชัย', age: 22, gender: 'ชาย', education: 'ปวส.', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขารังสิต', phone: '083-333-3333', lineId: 'wichai.m', address: 'ปทุมธานี', officerName: 'พี่ชมพู่', callResult: 'ไม่สะดวกรับสาย', orientationDate: '-', interviewResult: '-', status: 'ติดตามผล', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 4, timestamp: '2023-10-15 16:45:00', referrerCode: 'REF003', fullName: 'นารี สวยงาม', nickname: 'นา', age: 26, gender: 'หญิง', education: 'ปริญญาตรี', interestedPosition: 'ธุรการ', targetBranch: 'สาขาบางนา', phone: '084-444-4444', lineId: 'naree.s', address: 'สมุทรปราการ', officerName: 'พี่ชมพู่', callResult: 'ปฏิเสธ', orientationDate: '-', interviewResult: '-', status: 'ยกเลิก', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 5, timestamp: '2023-11-02 11:20:00', referrerCode: 'REF002', fullName: 'กิตติ เก่งกาจ', nickname: 'กิต', age: 30, gender: 'ชาย', education: 'ปริญญาตรี', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขาลาดพร้าว', phone: '085-555-5555', lineId: 'kitti.k', address: 'นนทบุรี', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-11-05', interviewResult: 'รอสัมภาษณ์', status: 'รอสัมภาษณ์', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+    ];
+
+    const MOCK_HR_OFFLINE_CANDIDATES = [
+      { id: 1, timestamp: '2023-10-01 09:30:00', pdfUrl: '#', fullName: 'สมชาย ใจดี', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขาบางนา', phone: '081-111-1111', nickname: 'ชาย', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-05', interviewResult: 'ผ่าน', status: 'รอเริ่มงาน', startDate: '2023-10-15', gender: 'ชาย', education: 'ปริญญาตรี', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', age: 25, lineId: 'somchai.j', referrerName: 'พี่เอ', fpIncrement: '1', fpPresentationUrl: '#', fpEditUrl: '#' },
+    ];
+
+    // --- Icons SVG Strings ---
+    const ICONS = {
+      Users: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+      FileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+      LogOut: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
+      Search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
+      Download: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+      Edit: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
+      Calculator: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="16" y1="10" x2="16" y2="10"></line><line x1="12" y1="10" x2="12" y2="10"></line><line x1="8" y1="10" x2="8" y2="10"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="12" y1="18" x2="12" y2="18"></line><line x1="8" y1="18" x2="8" y2="18"></line></svg>`,
+      Upload: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`,
+      DollarSign: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`,
+      Clock: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+      PieChart: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>`,
+      BarChart: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`,
+      CreditCard: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`,
+      Menu: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`,
+      X: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+      ExternalLink: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`,
+      ChevronDown: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
+      Settings: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
+      MessageCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`
+    };
+
+    // Set static icons
+    document.getElementById('icon-login').innerHTML = ICONS.Users;
+    document.getElementById('icon-close-menu').innerHTML = ICONS.X;
+    document.getElementById('icon-logout').innerHTML = ICONS.LogOut;
+    document.getElementById('icon-menu').innerHTML = ICONS.Menu;
+
+    // --- State Management ---
+    const STATE = {
+      currentUser: null,
+      currentView: 'overview',
+      users: [...INITIAL_USERS],
+      candidates: [],
+      hrOfflineCandidates: [],
+      settings: { lineToken: '', lineGroupId: '' },
+      loading: true,
+      isMobileMenuOpen: false,
+      
+      // Feature Specific State
+      dashboard: { filters: { dateFrom: '', dateTo: '', referrer: '', branch: '', position: '' } },
+      hrOffline: { filters: { dateFrom: '', dateTo: '', name: '', branch: '', position: '', sortDate: 'desc' } }, // 📌 เพิ่ม sortDate ใน State Filter
+      payment: { activeTab: 'pending', collapsedGroups: {} },
+      editModal: { data: null, newDate: '', newAmount: '' },
+      hrOfflineEditModal: { data: null }, // 📌 เพิ่ม State Modal สำหรับ HR Offline
+      userModal: { data: null },
+      usersView: { search: '' }, // 📌 เพิ่ม State สำหรับช่องค้นหาหน้าจัดการพนักงาน
+      paymentGroupModal: { group: null, date: new Date().toISOString().split('T')[0] }
+    };
+
+    // --- Helpers ---
+    const formatRefCode = (code) => {
+      if (!code) return '';
+      let str = String(code).trim();
+      if (str === '-') return '-';
+      if (/^\d+$/.test(str) && str.length < 4) return str.padStart(4, '0');
+      return str;
+    };
+
+    const getCandidateWorkDays = (startDate, endDate, status) => {
+      if (!['ทำงานแล้ว', 'ลาออก', 'พ้นสภาพ'].includes(status) || !startDate || startDate === '-') return 0;
+      const start = new Date(startDate);
+      let end = new Date();
+      if (['ลาออก', 'พ้นสภาพ'].includes(status) && endDate && endDate !== '-') {
+        end = new Date(endDate);
+      }
+      const diffTime = end - start;
+      return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    };
+
+    // 📌 ฟังก์ชันจัดการสถานะการอ่านรายการ (Red Dot Indicator)
+    window.markAsRead = (type, id) => {
+      if (!id) return;
+      const key = `read_state_${type}`;
+      let readIds = JSON.parse(localStorage.getItem(key) || '[]');
+      if (!readIds.includes(id)) {
+        readIds.push(id);
+        localStorage.setItem(key, JSON.stringify(readIds));
+      }
+    };
+
+    window.isRead = (type, id) => {
+      if (!id) return true;
+      const key = `read_state_${type}`;
+      let readIds = JSON.parse(localStorage.getItem(key) || '[]');
+      return readIds.includes(id);
+    };
+
+    window.markAllAsRead = (type) => {
+      const key = `read_state_${type}`;
+      const sourceData = type === 'candidates' ? STATE.candidates : STATE.hrOfflineCandidates;
+      const allIds = sourceData.map(c => c.id);
+      localStorage.setItem(key, JSON.stringify(allIds));
+      renderCurrentView(); // รีเฟรชหน้าเพื่อลบจุดแดงออก
+    };
+
+    // --- Initialization ---
+    async function initApp() {
+      STATE.loading = true;
+
+      // 📌 กู้คืน Session จาก LocalStorage เพื่อไม่ให้เด้งกลับไปหน้า Login เมื่อรีเฟรช
+      const savedUser = localStorage.getItem('hr_session_user');
+      if (savedUser) {
+        try {
+          STATE.currentUser = JSON.parse(savedUser);
+          document.getElementById('login-screen').classList.add('hidden-view');
+          document.getElementById('app-layout').classList.remove('hidden-view');
+          document.getElementById('sidebar-user-name').innerText = `ผู้ใช้งาน: ${STATE.currentUser.name}`;
+          document.getElementById('sidebar-user-role').innerText = `Role: ${STATE.currentUser.role}`;
+          document.getElementById('mobile-header-name').innerText = STATE.currentUser.name;
+          
+          const lastView = localStorage.getItem('hr_last_view');
+          STATE.currentView = lastView || 'overview';
+          renderSidebar();
+        } catch(e) {
+          localStorage.removeItem('hr_session_user');
+        }
+      }
+
+      try {
+        if (GOOGLE_SHEET_API_URL !== '') {
+          // Fetch Candidates
+          const candRes = await fetch(GOOGLE_SHEET_API_URL + '?sheet=candidates');
+          const candData = await candRes.json();
+          if (Array.isArray(candData) && !candData.error) {
+            STATE.candidates = candData.map(item => {
+              let history = [];
+              if (typeof item.paymentHistory === 'string' && item.paymentHistory !== '') {
+                try { history = JSON.parse(item.paymentHistory); } catch(e) { }
+              } else if (Array.isArray(item.paymentHistory)) history = item.paymentHistory;
+              return { ...item, referrerCode: formatRefCode(item.referrerCode), paymentHistory: history, endDate: item.endDate || '-' };
+            });
+          }
+          // Fetch Users
+          const userRes = await fetch(GOOGLE_SHEET_API_URL + '?sheet=users');
+          const userData = await userRes.json();
+          if (Array.isArray(userData) && userData.length > 0 && !userData.error) {
+            STATE.users = userData.map(u => ({ ...u, empCode: formatRefCode(u.empCode) }));
+          }
+          // Fetch Settings
+          const setRes = await fetch(GOOGLE_SHEET_API_URL + '?sheet=settings');
+          const setData = await setRes.json();
+          if (setData && !setData.error) STATE.settings = setData;
+
+          // Fetch HR Offline Candidates
+          try {
+            const hrOffRes = await fetch(GOOGLE_SHEET_API_URL + '?sheet=hr_offline');
+            const hrOffData = await hrOffRes.json();
+            if (Array.isArray(hrOffData) && !hrOffData.error) {
+              STATE.hrOfflineCandidates = hrOffData;
+            } else {
+              STATE.hrOfflineCandidates = [...MOCK_HR_OFFLINE_CANDIDATES];
+            }
+          } catch(e) {
+            STATE.hrOfflineCandidates = [...MOCK_HR_OFFLINE_CANDIDATES];
+          }
+
+        } else {
+          loadMockData();
+        }
+      } catch (error) {
+        console.error("Fetch error:", error);
+        loadMockData();
+      } finally {
+        STATE.loading = false;
+        if(STATE.currentUser) renderCurrentView();
+      }
+    }
+
+    function loadMockData() {
+      STATE.candidates = MOCK_CANDIDATES.map(c => ({ ...c, referrerCode: formatRefCode(c.referrerCode) }));
+      STATE.hrOfflineCandidates = [...MOCK_HR_OFFLINE_CANDIDATES];
+      STATE.users = INITIAL_USERS.map(u => ({ ...u, empCode: formatRefCode(u.empCode) }));
+    }
+
+    // --- Authentication ---
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const userField = document.getElementById('login-username').value.trim();
+      const passField = document.getElementById('login-password').value.trim();
+      
+      const user = STATE.users.find(u => u.username === userField && u.password === passField);
+      if (user) {
+        STATE.currentUser = user;
+        // 📌 บันทึก Session ลงใน LocalStorage
+        localStorage.setItem('hr_session_user', JSON.stringify(user));
+        
+        document.getElementById('login-screen').classList.add('hidden-view');
+        document.getElementById('app-layout').classList.remove('hidden-view');
+        
+        document.getElementById('sidebar-user-name').innerText = `ผู้ใช้งาน: ${user.name}`;
+        document.getElementById('sidebar-user-role').innerText = `Role: ${user.role}`;
+        document.getElementById('mobile-header-name').innerText = user.name;
+        
+        // 📌 ตั้งค่าหน้าแรกตาม Role ที่เข้าสู่ระบบ
+        let defaultView = 'overview';
+        if (user.role === 'employee') defaultView = 'dashboard';
+        if (user.role === 'OfflineOfficer') defaultView = 'hrOffline'; // Offline Officer เข้าหน้านี้เป็นหน้าแรก
+        
+        navigate(defaultView);
+      } else {
+        document.getElementById('login-error').classList.remove('hidden');
+      }
+    });
+
+    function handleLogout() {
+      STATE.currentUser = null;
+      // 📌 ลบ Session ออกจาก LocalStorage เมื่อออกจากระบบ
+      localStorage.removeItem('hr_session_user');
+      localStorage.removeItem('hr_last_view');
+      
+      document.getElementById('app-layout').classList.add('hidden-view');
+      document.getElementById('login-screen').classList.remove('hidden-view');
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-error').classList.add('hidden');
+    }
+
+    // --- Navigation ---
+    function toggleMobileMenu() {
+      STATE.isMobileMenuOpen = !STATE.isMobileMenuOpen;
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      if(STATE.isMobileMenuOpen) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    function navigate(view) {
+      STATE.currentView = view;
+      // 📌 จำหน้าล่าสุดที่เปิดไว้
+      localStorage.setItem('hr_last_view', view);
+      
+      if(STATE.isMobileMenuOpen) toggleMobileMenu();
+      renderSidebar();
+      renderCurrentView();
+    }
+
+    function renderSidebar() {
+      const nav = document.getElementById('sidebar-nav');
+      let html = '';
+      const role = STATE.currentUser.role;
+      const cv = STATE.currentView;
+
+      const btnClass = (v) => `w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${cv === v ? 'bg-indigo-700 text-white' : 'text-indigo-300 hover:bg-indigo-800 hover:text-white'}`;
+
+      // 📌 ควบคุมการแสดงผลเมนูด้วย Role ที่กำหนดอย่างชัดเจน
+      if (['admin', 'officer', 'OnlineOfficer'].includes(role)) {
+        html += `<button onclick="navigate('overview')" class="${btnClass('overview')}">${ICONS.PieChart}<span>Dashboard</span></button>`;
+      }
+      
+      if (['admin', 'officer', 'OnlineOfficer', 'employee'].includes(role)) {
+        html += `<button onclick="navigate('dashboard')" class="${btnClass('dashboard')}">${ICONS.FileText}<span>ข้อมูลผู้สมัคร</span></button>`;
+      }
+      
+      if (['admin', 'officer', 'OfflineOfficer'].includes(role)) {
+        html += `<button onclick="navigate('hrOffline')" class="${btnClass('hrOffline')}">${ICONS.FileText}<span>ข้อมูลผู้สมัครOffline</span></button>`;
+      }
+      
+      if (['admin'].includes(role)) {
+        html += `<button onclick="navigate('users')" class="${btnClass('users')}">${ICONS.Users}<span>จัดการพนักงาน</span></button>`;
+      }
+      
+      if (['admin', 'officer', 'OnlineOfficer'].includes(role)) {
+        html += `<button onclick="navigate('payment')" class="${btnClass('payment')}">${ICONS.CreditCard}<span>ระบบทำจ่าย & ประวัติ</span></button>`;
+      }
+      
+      if (['admin', 'officer', 'OnlineOfficer', 'employee'].includes(role)) {
+        html += `<button onclick="navigate('commission')" class="${btnClass('commission')}">${ICONS.Calculator}<span>รายการค่าคอมมิชชั่น</span></button>`;
+      }
+      
+      if (['admin'].includes(role)) {
+        html += `<button onclick="navigate('settings')" class="${btnClass('settings')}">${ICONS.Settings}<span>ตั้งค่าระบบ</span></button>`;
+      }
+      
+      nav.innerHTML = html;
+    }
+
+    function renderCurrentView() {
+      const container = document.getElementById('views-container');
+      if (STATE.loading) {
+        container.innerHTML = `<div class="flex h-full justify-center items-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>`;
+        return;
+      }
+
+      switch(STATE.currentView) {
+        case 'overview': renderOverview(container); break;
+        case 'dashboard': renderDashboard(container); break;
+        case 'hrOffline': renderHrOffline(container); break;
+        case 'payment': renderPayment(container); break;
+        case 'commission': renderCommission(container); break;
+        case 'users': renderUsers(container); break;
+        case 'settings': renderSettings(container); break;
+      }
+    }
+
+    // =========================================================================
+    // VIEWS RENDERING LOGIC
+    // =========================================================================
+
+    // --- Overview View ---
+    function renderOverview(container) {
+      let data = STATE.candidates;
+      if (STATE.currentUser.role === 'employee') {
+        const myCode = String(STATE.currentUser.empCode || '').trim().toLowerCase();
+        data = data.filter(c => String(c.referrerCode || '').trim().toLowerCase() === myCode);
+      }
+
+      let startedWork = 0, failedOrCancel = 0;
+      const refC = {}, posC = {}, branchC = {}, ageC = { 'ต่ำกว่า 20': 0, '20-25': 0, '26-30': 0, 'มากกว่า 30': 0 }, statusC = {};
+
+      data.forEach(c => {
+        if (c.status === 'ทำงานแล้ว') startedWork++;
+        if (c.status === 'ยกเลิก' || c.interviewResult === 'ไม่ผ่าน') failedOrCancel++;
+        statusC[c.status] = (statusC[c.status] || 0) + 1;
+        const pos = c.interestedPosition || 'ไม่ระบุ'; posC[pos] = (posC[pos] || 0) + 1;
+        const branch = c.targetBranch || 'ไม่ระบุ'; branchC[branch] = (branchC[branch] || 0) + 1;
+        const ref = c.referrerCode || 'ไม่ระบุ'; if (ref !== '-') refC[ref] = (refC[ref] || 0) + 1;
+        const age = Number(c.age);
+        if (!isNaN(age)) {
+          if (age < 20) ageC['ต่ำกว่า 20']++; else if (age <= 25) ageC['20-25']++;
+          else if (age <= 30) ageC['26-30']++; else ageC['มากกว่า 30']++;
+        }
+      });
+
+      let topRef = { name: '-', count: 0 };
+      Object.entries(refC).forEach(([name, count]) => { if (count > topRef.count) topRef = { name, count }; });
+      const sortMap = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
+
+      const renderBars = (arr, colorClass) => {
+        if(arr.length===0) return '<p class="text-center text-gray-500 my-auto">ไม่มีข้อมูล</p>';
+        const max = arr[0][1];
+        return arr.map(([name, count]) => `
+          <div>
+            <div class="flex justify-between text-xs sm:text-sm mb-1"><span class="font-medium text-gray-700 truncate mr-2">${name}</span><span class="font-bold whitespace-nowrap ${colorClass.text}">${count} คน</span></div>
+            <div class="w-full bg-gray-100 rounded-full h-2.5"><div class="h-2.5 rounded-full ${colorClass.bg}" style="width: ${(count/max)*100}%"></div></div>
+          </div>
+        `).join('');
+      };
+
+      const renderAges = () => {
+         const tot = data.length || 1;
+         return Object.entries(ageC).map(([range, count]) => `
+          <div>
+            <div class="flex justify-between text-xs sm:text-sm mb-1"><span class="font-medium text-gray-700">${range}</span><span class="text-blue-600 font-bold">${count} คน</span></div>
+            <div class="w-full bg-gray-100 rounded-full h-2.5"><div class="bg-blue-400 h-2.5 rounded-full" style="width: ${(count/tot)*100}%"></div></div>
+          </div>`).join('');
+      }
+
+      const renderStatus = () => Object.entries(statusC).map(([status, count]) => {
+        let bClass = 'bg-gray-100 text-gray-800 border-gray-200';
+        if (status === 'ทำงานแล้ว') bClass = 'bg-green-50 text-green-700 border-green-200';
+        else if (status === 'รอเริ่มงาน') bClass = 'bg-blue-50 text-blue-700 border-blue-200';
+        else if (status === 'ยกเลิก') bClass = 'bg-red-50 text-red-700 border-red-200';
+        else if (status === 'ติดตามผล') bClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        else if (status === 'รอสัมภาษณ์') bClass = 'bg-purple-50 text-purple-700 border-purple-200';
+        return `<div class="p-2 sm:px-4 sm:py-2 rounded-lg border flex flex-col items-center justify-center flex-1 shadow-sm ${bClass}">
+            <span class="text-lg sm:text-xl font-bold">${count}</span><span class="text-[10px] sm:text-xs mt-1 text-center truncate w-full">${status}</span>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="flex flex-col h-full overflow-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div><h2 class="text-xl sm:text-2xl font-bold text-gray-800">ภาพรวมระบบ (Dashboard)</h2><p class="text-xs sm:text-sm text-gray-500 mt-1">สรุปข้อมูลสถิติการฝากประวัติและการทำงาน</p></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-indigo-100 text-indigo-600 mr-3 sm:mr-4">${ICONS.FileText}</div><div><p class="text-xs sm:text-sm font-medium text-gray-500">ใบฝากประวัติทั้งหมด</p><p class="text-xl sm:text-2xl font-bold text-gray-900">${data.length} <span class="text-xs sm:text-sm font-medium text-gray-500">ใบ</span></p></div></div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-green-100 text-green-600 mr-3 sm:mr-4">${ICONS.Users}</div><div><p class="text-xs sm:text-sm font-medium text-gray-500">เริ่มงานแล้ว</p><p class="text-xl sm:text-2xl font-bold text-green-600">${startedWork} <span class="text-xs sm:text-sm font-medium text-gray-500">คน</span></p></div></div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-red-100 text-red-600 mr-3 sm:mr-4">${ICONS.BarChart}</div><div><p class="text-xs sm:text-sm font-medium text-gray-500">ยกเลิก / ไม่ผ่าน</p><p class="text-xl sm:text-2xl font-bold text-red-600">${failedOrCancel} <span class="text-xs sm:text-sm font-medium text-gray-500">คน</span></p></div></div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-amber-100 text-amber-600 mr-3 sm:mr-4">${ICONS.PieChart}</div><div class="overflow-hidden"><p class="text-xs sm:text-sm font-medium text-gray-500">ผู้แนะนำสูงสุด</p><p class="text-lg sm:text-xl font-bold text-amber-600 truncate">${topRef.name}</p><p class="text-xs text-gray-500">จำนวน ${topRef.count} คน</p></div></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 flex-1 pb-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">ตำแหน่งงานที่สนใจ</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortMap(posC), {text:'text-indigo-600', bg:'bg-indigo-500'})}</div></div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สาขาที่ต้องการสมัคร</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortMap(branchC), {text:'text-emerald-600', bg:'bg-emerald-500'})}</div></div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สถิติผู้แนะนำ</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortMap(refC), {text:'text-amber-600', bg:'bg-amber-500'})}</div></div>
+            <div class="space-y-4 sm:space-y-6 flex flex-col">
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สัดส่วนช่วงอายุ</h3><div class="space-y-4">${renderAges()}</div></div>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex-1"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สถานะผู้สมัคร</h3><div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">${renderStatus()}</div></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- Dashboard View ---
+    function renderDashboard(container) {
+      const f = STATE.dashboard.filters;
+      let filtered = STATE.candidates.filter(c => {
+        if (STATE.currentUser.role === 'employee' && String(c.referrerCode||'').trim().toLowerCase() !== String(STATE.currentUser.empCode||'').trim().toLowerCase()) return false;
+        if (f.dateFrom && c.timestamp.split(' ')[0] < f.dateFrom) return false;
+        if (f.dateTo && c.timestamp.split(' ')[0] > f.dateTo) return false;
+        if (f.referrer && !c.referrerCode.toLowerCase().includes(f.referrer.toLowerCase())) return false;
+        if (f.branch && !c.targetBranch.toLowerCase().includes(f.branch.toLowerCase())) return false;
+        if (f.position && !c.interestedPosition.toLowerCase().includes(f.position.toLowerCase())) return false;
+        return true;
+      });
+
+      const empKeys = ['timestamp', 'referrerCode', 'fullName', 'nickname', 'age', 'gender', 'interestedPosition', 'targetBranch', 'status', 'startDate', 'days15', 'days30'];
+      const allCols = [
+        { key: 'timestamp', label: 'ประทับเวลา' }, { key: 'referrerCode', label: 'รหัสผู้แนะนำ' }, { key: 'fullName', label: 'ชื่อ-สกุล' },
+        { key: 'nickname', label: 'ชื่อเล่น' }, { key: 'age', label: 'อายุ' }, { key: 'gender', label: 'เพศ' },
+        { key: 'education', label: 'วุฒิการศึกษา' }, { key: 'interestedPosition', label: 'ตำแหน่งงานที่สนใจ' },
+        { key: 'targetBranch', label: 'สาขาที่ต้องการสมัคร' }, { key: 'phone', label: 'เบอร์โทรศัพท์' }, { key: 'lineId', label: 'ไอดีไลน์' },
+        { key: 'address', label: 'ที่อยู่ปัจจุบัน' }, { key: 'officerName', label: 'ชื่อเจ้าหน้าที่' }, { key: 'callResult', label: 'ผลการโทร' },
+        { key: 'orientationDate', label: 'นัดปฐมนิเทศ' }, { key: 'interviewResult', label: 'ผลสัมภาษณ์' }, { key: 'status', label: 'สถานะ' },
+        { key: 'startDate', label: 'วันที่เริ่มงาน' }, { key: 'days15', label: 'ครบ 15 วัน' }, { key: 'days30', label: 'ครบ 30 วัน' },
+        { key: 'pdfUrl', label: 'PDF' }, { key: 'pdfEditUrl', label: 'แก้ไข PDF' }
+      ];
+      if(STATE.currentUser.role !== 'employee') allCols.push({ key: 'actions', label: 'จัดการ' });
+
+      const cols = allCols.filter(c => STATE.currentUser.role === 'employee' ? empKeys.includes(c.key) : true);
+
+      let tbodyHTML = filtered.length === 0 
+        ? `<tr><td colspan="${cols.length}" class="px-4 py-8 text-center text-gray-500">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</td></tr>`
+        : filtered.map(row => {
+            let tr = '<tr class="hover:bg-gray-50 transition-colors">';
+            cols.forEach(col => {
+              if (col.key === 'actions') {
+                tr += `<td class="px-4 py-3 text-sm whitespace-nowrap bg-white sticky right-0 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] border-l border-gray-100">
+                         <button onclick="openEditCandidate(${row.id})" class="text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-3 py-1 rounded">แก้ไข</button>
+                       </td>`;
+                return;
+              }
+              let content = row[col.key];
+              const wDays = getCandidateWorkDays(row.startDate, row.endDate, row.status);
+              
+              if(col.key === 'days15') content = wDays >= 15 ? '<span class="text-green-600 font-bold">✓ (ครบ)</span>' : (['ทำงานแล้ว','ลาออก','พ้นสภาพ'].includes(row.status) ? `<span class="text-gray-400 text-xs">${wDays}/15</span>` : '-');
+              else if(col.key === 'days30') content = wDays >= 30 ? '<span class="text-green-600 font-bold">✓ (ครบ)</span>' : (['ทำงานแล้ว','ลาออก','พ้นสภาพ'].includes(row.status) ? `<span class="text-gray-400 text-xs">${wDays}/30</span>` : '-');
+              else if(col.key === 'status') {
+                let bc = 'bg-gray-100 text-gray-800';
+                if (content === 'ทำงานแล้ว') bc = 'bg-green-100 text-green-800';
+                else if (content === 'รอเริ่มงาน') bc = 'bg-blue-100 text-blue-800';
+                else if (content === 'ยกเลิก') bc = 'bg-red-100 text-red-800';
+                else if (content === 'ติดตามผล') bc = 'bg-yellow-100 text-yellow-800';
+                else if (content === 'รอสัมภาษณ์') bc = 'bg-purple-100 text-purple-800';
+                else if (content === 'ลาออก') bc = 'bg-orange-100 text-orange-800';
+                else if (content === 'พ้นสภาพ') bc = 'bg-gray-200 text-gray-800 border-gray-300 border';
+                let ex = (['ลาออก','พ้นสภาพ'].includes(row.status) && row.endDate && row.endDate!=='-') ? `<span class="text-[10px] text-gray-500 mt-1">(${row.endDate})</span>` : '';
+                content = `<div class="flex flex-col items-start"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${bc}">${content}</span>${ex}</div>`;
+              } else if(col.key === 'pdfUrl') content = `<a href="${content}" target="_blank" class="text-indigo-600 flex justify-center">${ICONS.Download}</a>`;
+              else if(col.key === 'pdfEditUrl') content = `<a href="${content}" target="_blank" class="text-orange-500 flex justify-center">${ICONS.Edit}</a>`;
+              
+              // 📌 ใส่จุดแดงเมื่อเป็นรายการใหม่ที่ยังไม่เคยเปิดดู
+              if (col.key === 'timestamp') {
+                const isUnread = !isRead('candidates', row.id);
+                content = `<div class="flex items-center">${isUnread ? `<span id="dot-cand-${row.id}" class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block flex-shrink-0 mr-2 shadow-sm animate-pulse" title="รายการใหม่"></span>` : ''}<span>${content}</span></div>`;
+              }
+
+              tr += `<td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">${content}</td>`;
+            });
+            tr += '</tr>';
+            return tr;
+          }).join('');
+
+      container.innerHTML = `
+        <div class="flex flex-col h-full bg-gray-50">
+          <div class="bg-white px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center z-10 gap-3">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800">ฐานข้อมูลผู้สมัครงาน</h2>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 sm:space-x-4">
+              <div class="text-sm text-gray-500 flex flex-col sm:items-end">
+                <span>พบ ${filtered.length} รายการ</span>
+                <button onclick="markAllAsRead('candidates')" class="text-xs text-gray-400 hover:text-indigo-600 underline mt-1">ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</button>
+              </div>
+              <div class="flex space-x-2">
+                ${STATE.currentUser.role === 'admin' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${STATE.currentUser.role === 'officer' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${STATE.currentUser.role === 'OfflineOfficer' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${STATE.currentUser.role === 'OnlineOfficer' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${STATE.currentUser.role !== 'employee' ? `<button onclick="openEditCandidate(null)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center">+ <span class="hidden sm:inline ml-1">เพิ่มประวัติ</span><span class="sm:hidden ml-1">เพิ่ม</span></button>` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="bg-white p-4 mx-4 sm:mx-6 mt-4 sm:mt-6 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex items-center space-x-2 mb-4 text-gray-700 font-medium">${ICONS.Search}<span>ตัวกรองข้อมูล</span></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div><label class="block text-xs text-gray-500 mb-1">จากวันที่</label><input type="date" id="f-df" value="${f.dateFrom}" onchange="updateDashFilter('dateFrom', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">ถึงวันที่</label><input type="date" id="f-dt" value="${f.dateTo}" onchange="updateDashFilter('dateTo', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">รหัสผู้แนะนำ</label><input type="text" id="f-ref" value="${f.referrer}" onchange="updateDashFilter('referrer', this.value)" placeholder="พิมพ์รหัส..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">สาขา</label><input type="text" id="f-br" value="${f.branch}" onchange="updateDashFilter('branch', this.value)" placeholder="ค้นหาสาขา..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">ตำแหน่ง</label><input type="text" id="f-pos" value="${f.position}" onchange="updateDashFilter('position', this.value)" placeholder="ค้นหาตำแหน่ง..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+            </div>
+            <div class="mt-4 flex justify-end"><button onclick="clearDashFilter()" class="text-sm text-gray-600 hover:text-indigo-600 font-medium px-4 py-2 w-full sm:w-auto bg-gray-100 sm:bg-transparent rounded">ล้างตัวกรอง</button></div>
+          </div>
+          <div class="flex-1 min-h-0 m-4 sm:m-6 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
+            <div class="flex-1 overflow-auto">
+              <table class="min-w-max w-full text-left border-collapse">
+                <thead class="bg-gray-100 sticky top-0 z-10">
+                  <tr>${cols.map(c => `<th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap ${c.key==='actions'?'sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)]':''}">${c.label}</th>`).join('')}</tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">${tbodyHTML}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    window.updateDashFilter = (key, val) => { STATE.dashboard.filters[key] = val; renderCurrentView(); };
+    window.clearDashFilter = () => { STATE.dashboard.filters = {dateFrom:'', dateTo:'', referrer:'', branch:'', position:''}; renderCurrentView(); };
+
+    // --- HR Offline View ---
+    function renderHrOffline(container) {
+      const f = STATE.hrOffline.filters;
+      
+      // 📌 กรองข้อมูลสำหรับ HR Offline
+      let filtered = STATE.hrOfflineCandidates.filter(c => {
+        if (f.dateFrom && c.timestamp.split(' ')[0] < f.dateFrom) return false;
+        if (f.dateTo && c.timestamp.split(' ')[0] > f.dateTo) return false;
+        if (f.name && !(c.fullName || '').toLowerCase().includes(f.name.toLowerCase())) return false;
+        if (f.branch && !(c.targetBranch || '').toLowerCase().includes(f.branch.toLowerCase())) return false;
+        if (f.position && !(c.interestedPosition || '').toLowerCase().includes(f.position.toLowerCase())) return false;
+        return true;
+      });
+
+      // 📌 เรียงลำดับข้อมูลตามวันที่
+      filtered.sort((a, b) => {
+        const timeA = a.timestamp || '';
+        const timeB = b.timestamp || '';
+        if (timeA === timeB) return 0;
+        if (f.sortDate === 'asc') return timeA > timeB ? 1 : -1; // เก่าไปใหม่
+        return timeA < timeB ? 1 : -1; // ใหม่ไปเก่า (desc)
+      });
+      
+      const allCols = [
+        { key: 'timestamp', label: 'ประทับเวลา' },
+        { key: 'pdfUrl', label: 'PDF URL' },
+        { key: 'fullName', label: 'ชื่อ-สกุล' },
+        { key: 'interestedPosition', label: 'ตำแหน่งงานที่สนใจ' },
+        { key: 'targetBranch', label: 'สาขาที่ต้องการสมัคร' },
+        { key: 'phone', label: 'เบอร์โทรศัพท์ที่ติดต่อได้' },
+        { key: 'nickname', label: 'ชื่อเล่น' },
+        { key: 'callResult', label: 'ผลการโทร' },
+        { key: 'orientationDate', label: 'นัดปฐมนิเทศออนไลน์วันพุธที่ 18/2/69 ตำแหน่งพนักงานขาย' },
+        { key: 'interviewResult', label: 'ผลการสัมภาษณ์จากพี่ชมพู่' },
+        { key: 'status', label: 'สถานะ' },
+        { key: 'startDate', label: 'วันเริ่มงาน' },
+        { key: 'gender', label: 'เพศ' },
+        { key: 'education', label: 'วุฒิการศึกษา(ถ้ามี)' },
+        { key: 'address', label: 'ที่อยู่ปัจจุบัน' },
+        { key: 'officerName', label: 'ชื่อเจ้าหน้าที่ผู้ให้ข้อมูล' },
+        { key: 'age', label: 'อายุ' },
+        { key: 'lineId', label: 'ไอดีไลน์' },
+        { key: 'referrerName', label: 'ชื่อผู้แนะนำ' },
+        { key: 'fpIncrement', label: '[Form Publisher] Increment' },
+        { key: 'fpPresentationUrl', label: '[Form Publisher] Presentation URL' },
+        { key: 'fpEditUrl', label: '[Form Publisher] Edit URL' }
+      ];
+
+      // 📌 เพิ่มคอลัมน์ "จัดการ" ให้กับ Admin, Officer หรือ OfflineOfficer
+      if(!['employee'].includes(STATE.currentUser.role)) {
+        allCols.push({ key: 'actions', label: 'จัดการ' });
+      }
+
+      let tbodyHTML = filtered.length === 0 
+        ? `<tr><td colspan="${allCols.length}" class="px-4 py-8 text-center text-gray-500">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</td></tr>`
+        : filtered.map(row => {
+            let tr = '<tr class="hover:bg-gray-50 transition-colors">';
+            allCols.forEach(col => {
+              if (col.key === 'actions') {
+                tr += `<td class="px-4 py-3 text-sm whitespace-nowrap bg-white sticky right-0 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] border-l border-gray-100">
+                         <button onclick="openEditHrOffCandidate(${row.id})" class="text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-3 py-1 rounded">แก้ไข</button>
+                       </td>`;
+                return;
+              }
+
+              let content = row[col.key] || '-';
+              
+              if(col.key === 'status') {
+                let bc = 'bg-gray-100 text-gray-800';
+                if (content === 'ทำงานแล้ว') bc = 'bg-green-100 text-green-800';
+                else if (content === 'รอเริ่มงาน') bc = 'bg-blue-100 text-blue-800';
+                else if (content === 'ยกเลิก') bc = 'bg-red-100 text-red-800';
+                else if (content === 'ติดตามผล') bc = 'bg-yellow-100 text-yellow-800';
+                else if (content === 'รอสัมภาษณ์') bc = 'bg-purple-100 text-purple-800';
+                content = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${bc}">${content}</span>`;
+              } else if(['pdfUrl', 'fpPresentationUrl', 'fpEditUrl'].includes(col.key) && content !== '-' && content !== '') {
+                const icon = col.key === 'fpEditUrl' ? ICONS.Edit : (col.key === 'pdfUrl' ? ICONS.Download : ICONS.ExternalLink);
+                const color = col.key === 'fpEditUrl' ? 'text-orange-500' : 'text-indigo-600';
+                content = `<a href="${content}" target="_blank" class="${color} flex justify-center hover:opacity-70">${icon}</a>`;
+              }
+
+              // 📌 ใส่จุดแดงเมื่อเป็นรายการใหม่ที่ยังไม่เคยเปิดดู
+              if (col.key === 'timestamp') {
+                const isUnread = !isRead('hroffline', row.id);
+                content = `<div class="flex items-center">${isUnread ? `<span id="dot-hroff-${row.id}" class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block flex-shrink-0 mr-2 shadow-sm animate-pulse" title="รายการใหม่"></span>` : ''}<span>${content}</span></div>`;
+              }
+              
+              tr += `<td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">${content}</td>`;
+            });
+            tr += '</tr>';
+            return tr;
+          }).join('');
+
+      container.innerHTML = `
+        <div class="flex flex-col h-full bg-gray-50">
+          <div class="bg-white px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center z-10 gap-3">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800">ข้อมูลผู้สมัครHR Offline</h2>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-2 sm:space-x-4">
+              <div class="text-sm text-gray-500 flex flex-col sm:items-end">
+                <span>พบ ${filtered.length} รายการ</span>
+                <button onclick="markAllAsRead('hroffline')" class="text-xs text-gray-400 hover:text-indigo-600 underline mt-1">ทำเครื่องหมายว่าอ่านแล้วทั้งหมด</button>
+              </div>
+              <div class="flex space-x-2">
+               ${STATE.currentUser.role === 'admin' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${STATE.currentUser.role === 'officer' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${STATE.currentUser.role === 'OfflineOfficer' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${STATE.currentUser.role === 'OnlineOfficer' ? `<a href="${GOOGLE_SHEET_DOC_URL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"><span class="mr-1">${ICONS.ExternalLink}</span> <span class="hidden sm:inline">เปิด Google Sheet</span><span class="sm:hidden">ชีต</span></a>` : ''}
+                ${!['employee'].includes(STATE.currentUser.role) ? `<button onclick="openEditHrOffCandidate(null)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center">+ <span class="hidden sm:inline ml-1">เพิ่มประวัติ Offline</span><span class="sm:hidden ml-1">เพิ่ม</span></button>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- 📌 ส่วนตัวกรอง (Filter) สำหรับ HR Offline -->
+          <div class="bg-white p-4 mx-4 sm:mx-6 mt-4 sm:mt-6 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex items-center space-x-2 mb-4 text-gray-700 font-medium">${ICONS.Search}<span>ตัวกรองข้อมูล</span></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+              <div><label class="block text-xs text-gray-500 mb-1">จากวันที่</label><input type="date" value="${f.dateFrom}" onchange="updateHrOffFilter('dateFrom', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">ถึงวันที่</label><input type="date" value="${f.dateTo}" onchange="updateHrOffFilter('dateTo', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">ชื่อ-สกุล</label><input type="text" value="${f.name}" onchange="updateHrOffFilter('name', this.value)" placeholder="พิมพ์ชื่อ..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">สาขา</label><input type="text" value="${f.branch}" onchange="updateHrOffFilter('branch', this.value)" placeholder="ค้นหาสาขา..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div><label class="block text-xs text-gray-500 mb-1">ตำแหน่ง</label><input type="text" value="${f.position}" onchange="updateHrOffFilter('position', this.value)" placeholder="ค้นหาตำแหน่ง..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">เรียงลำดับวันที่</label>
+                <select onchange="updateHrOffFilter('sortDate', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500">
+                  <option value="desc" ${f.sortDate === 'desc' ? 'selected' : ''}>ล่าสุดไปเก่าสุด</option>
+                  <option value="asc" ${f.sortDate === 'asc' ? 'selected' : ''}>เก่าสุดไปล่าสุด</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-4 flex justify-end"><button onclick="clearHrOffFilter()" class="text-sm text-gray-600 hover:text-indigo-600 font-medium px-4 py-2 w-full sm:w-auto bg-gray-100 sm:bg-transparent rounded">ล้างตัวกรอง</button></div>
+          </div>
+          
+          <div class="flex-1 min-h-0 m-4 sm:m-6 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
+            <div class="flex-1 overflow-auto">
+              <table class="min-w-max w-full text-left border-collapse">
+                <thead class="bg-gray-100 sticky top-0 z-10">
+                  <tr>${allCols.map(c => `<th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap ${c.key==='actions'?'sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)]':''}" title="${c.label}">${c.label.length > 25 ? c.label.substring(0, 25) + '...' : c.label}</th>`).join('')}</tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">${tbodyHTML}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    window.updateHrOffFilter = (key, val) => { STATE.hrOffline.filters[key] = val; renderCurrentView(); };
+    window.clearHrOffFilter = () => { STATE.hrOffline.filters = {dateFrom:'', dateTo:'', name:'', branch:'', position:'', sortDate:'desc'}; renderCurrentView(); };
+
+    // --- Edit Candidate Modal (HR Offline) ---
+    window.openEditHrOffCandidate = (id) => {
+      // 📌 นำจุดแดงออกทันทีที่คลิก
+      if(id) {
+        markAsRead('hroffline', id);
+        const dot = document.getElementById(`dot-hroff-${id}`);
+        if(dot) dot.remove();
+      }
+
+      let data = { id: null, fullName: '', nickname: '', age: '', gender: 'ชาย', education: '', interestedPosition: '', targetBranch: '', phone: '', lineId: '', address: '', officerName: '', callResult: '', orientationDate: '-', interviewResult: '', status: 'รอสัมภาษณ์', startDate: '-', referrerName: '', pdfUrl: '', fpIncrement: '', fpPresentationUrl: '', fpEditUrl: '' };
+      if(id) {
+        const found = STATE.hrOfflineCandidates.find(c => c.id === id);
+        if(found) data = {...found};
+      }
+      STATE.hrOfflineEditModal.data = data;
+      renderHrOffEditModal();
+    };
+
+    function renderHrOffEditModal() {
+      const mc = document.getElementById('global-modal-container');
+      const d = STATE.hrOfflineEditModal.data;
+
+      mc.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[98vh] sm:max-h-[95vh]">
+          <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center sticky top-0 z-10">
+            <h3 class="font-bold text-gray-800 text-base sm:text-lg flex items-center">${ICONS.Edit}<span class="ml-2">${d.id ? `แก้ไขข้อมูล Offline: ${d.fullName}` : 'เพิ่มข้อมูล Offline'}</span></h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+          </div>
+          <form onsubmit="saveEditHrOffCandidate(event)" class="p-4 sm:p-6 overflow-y-auto flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              <div class="md:col-span-3 border-b pb-2"><h4 class="font-bold text-gray-700 text-sm">ข้อมูลทั่วไป</h4></div>
+              <div><label class="block text-sm font-medium mb-1">ชื่อ-สกุล</label><input type="text" id="hro-fn" required value="${d.fullName||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ชื่อเล่น</label><input type="text" id="hro-nn" value="${d.nickname||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">อายุ</label><input type="number" id="hro-ag" value="${d.age||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">เพศ</label>
+                <select id="hro-gd" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500">
+                  <option value="ชาย" ${d.gender==='ชาย'?'selected':''}>ชาย</option>
+                  <option value="หญิง" ${d.gender==='หญิง'?'selected':''}>หญิง</option>
+                  <option value="ไม่ระบุ" ${d.gender==='ไม่ระบุ'?'selected':''}>ไม่ระบุ</option>
+                </select>
+              </div>
+              <div><label class="block text-sm font-medium mb-1">เบอร์โทรศัพท์</label><input type="text" id="hro-ph" value="${d.phone||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ไอดีไลน์</label><input type="text" id="hro-li" value="${d.lineId||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">วุฒิการศึกษา</label><input type="text" id="hro-ed" value="${d.education||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div class="md:col-span-2"><label class="block text-sm font-medium mb-1">ที่อยู่ปัจจุบัน</label><input type="text" id="hro-ad" value="${d.address||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+
+              <div class="md:col-span-3 border-b pb-2 mt-4"><h4 class="font-bold text-gray-700 text-sm">ส่วนงานที่สนใจ & การติดตาม</h4></div>
+              <div><label class="block text-sm font-medium mb-1">ตำแหน่งที่สนใจ</label><input type="text" id="hro-pos" value="${d.interestedPosition||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">สาขา</label><input type="text" id="hro-br" value="${d.targetBranch||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ชื่อผู้แนะนำ</label><input type="text" id="hro-rn" value="${d.referrerName||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              
+              <div><label class="block text-sm font-medium mb-1">ชื่อเจ้าหน้าที่</label><input type="text" id="hro-off" value="${d.officerName||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ผลการโทร</label><input type="text" id="hro-cr" value="${d.callResult||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">นัดปฐมนิเทศ</label><input type="date" id="hro-od" value="${d.orientationDate!=='-'?d.orientationDate:''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ผลสัมภาษณ์</label><input type="text" id="hro-ir" value="${d.interviewResult||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-1">สถานะ</label>
+                <select id="hro-st" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500">
+                  <option value="ทำงานแล้ว" ${d.status==='ทำงานแล้ว'?'selected':''}>ทำงานแล้ว</option>
+                  <option value="รอเริ่มงาน" ${d.status==='รอเริ่มงาน'?'selected':''}>รอเริ่มงาน</option>
+                  <option value="รอสัมภาษณ์" ${d.status==='รอสัมภาษณ์'?'selected':''}>รอสัมภาษณ์</option>
+                  <option value="ติดตามผล" ${d.status==='ติดตามผล'?'selected':''}>ติดตามผล</option>
+                  <option value="ลาออก" ${d.status==='ลาออก'?'selected':''}>ลาออก</option>
+                  <option value="พ้นสภาพ" ${d.status==='พ้นสภาพ'?'selected':''}>พ้นสภาพ</option>
+                  <option value="ยกเลิก" ${d.status==='ยกเลิก'?'selected':''}>ยกเลิก</option>
+                  <option value="รอประเมิน" ${d.status==='รอประเมิน'?'selected':''}>รอประเมิน</option>
+                  <option value="-" ${d.status==='-'?'selected':''}>-</option>
+                </select>
+              </div>
+              <div><label class="block text-sm font-medium mb-1">วันที่เริ่มงาน</label><input type="date" id="hro-sd" value="${d.startDate!=='-'?d.startDate:''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+
+              <div class="md:col-span-3 border-b pb-2 mt-4"><h4 class="font-bold text-gray-700 text-sm">ข้อมูลจากระบบ Form Publisher (ถ้ามี)</h4></div>
+              <div><label class="block text-sm font-medium mb-1">PDF URL</label><input type="text" id="hro-pdf" value="${d.pdfUrl||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">Presentation URL</label><input type="text" id="hro-pUrl" value="${d.fpPresentationUrl||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">Edit URL</label><input type="text" id="hro-eUrl" value="${d.fpEditUrl||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+
+            </div>
+            <div class="mt-6 pt-4 border-t flex justify-end gap-3">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-100 rounded-lg font-medium">ยกเลิก</button>
+              <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">บันทึก</button>
+            </div>
+          </form>
+        </div>
+      `;
+      mc.classList.remove('hidden');
+    }
+
+    function syncHrOffFormToState() {
+      const d = STATE.hrOfflineEditModal.data;
+      const getV = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+      
+      d.fullName = getV('hro-fn'); d.nickname = getV('hro-nn'); d.age = getV('hro-ag'); d.gender = getV('hro-gd');
+      d.education = getV('hro-ed'); d.interestedPosition = getV('hro-pos'); d.targetBranch = getV('hro-br');
+      d.phone = getV('hro-ph'); d.lineId = getV('hro-li'); d.address = getV('hro-ad'); d.officerName = getV('hro-off');
+      d.callResult = getV('hro-cr'); d.orientationDate = getV('hro-od') || '-'; d.interviewResult = getV('hro-ir');
+      d.status = getV('hro-st'); d.startDate = getV('hro-sd') || '-'; d.referrerName = getV('hro-rn');
+      d.pdfUrl = getV('hro-pdf'); d.fpPresentationUrl = getV('hro-pUrl'); d.fpEditUrl = getV('hro-eUrl');
+    }
+
+    window.saveEditHrOffCandidate = async (e) => {
+      e.preventDefault();
+      syncHrOffFormToState();
+      const d = STATE.hrOfflineEditModal.data;
+      const isNew = !d.id;
+      
+      if(isNew) {
+        d.id = STATE.hrOfflineCandidates.length ? Math.max(...STATE.hrOfflineCandidates.map(c=>c.id||0))+1 : 1;
+        d.timestamp = new Date().toLocaleString('th-TH',{hour12:false}).replace(',','');
+        STATE.hrOfflineCandidates.push(d);
+      } else {
+        const idx = STATE.hrOfflineCandidates.findIndex(c=>c.id===d.id);
+        if(idx>-1) STATE.hrOfflineCandidates[idx] = d;
+      }
+      
+      closeModal();
+      renderCurrentView();
+
+      if (GOOGLE_SHEET_API_URL) {
+        try {
+          await fetch(GOOGLE_SHEET_API_URL, {
+            method: 'POST', 
+            body: JSON.stringify({ type: 'hr_offline', action: isNew?'add':'update', data: d }), 
+            headers: {'Content-Type':'text/plain;charset=utf-8'}
+          });
+        } catch(err){}
+      }
+    };
+
+
+    // --- Edit Candidate Modal (Normal) ---
+    window.openEditCandidate = (id) => {
+      // 📌 นำจุดแดงออกทันทีที่คลิก
+      if(id) {
+        markAsRead('candidates', id);
+        const dot = document.getElementById(`dot-cand-${id}`);
+        if(dot) dot.remove();
+      }
+
+      let data = { id: null, fullName: '', referrerCode: '', phone: '', interestedPosition: '', targetBranch: '', status: 'รอสัมภาษณ์', startDate: '-', endDate: '-', paymentHistory: [], paidCommission: 0 };
+      if(id) {
+        const found = STATE.candidates.find(c => c.id === id);
+        if(found) {
+          data = {...found};
+          if(typeof data.paymentHistory === 'string') try { data.paymentHistory = JSON.parse(data.paymentHistory); } catch(e){}
+          if(!Array.isArray(data.paymentHistory)) data.paymentHistory = [];
+        }
+      }
+      STATE.editModal.data = data;
+      STATE.editModal.newDate = '';
+      STATE.editModal.newAmount = '';
+      renderEditModal();
+    };
+
+    window.closeModal = () => { document.getElementById('global-modal-container').classList.add('hidden'); };
+
+    function renderEditModal() {
+      const mc = document.getElementById('global-modal-container');
+      const d = STATE.editModal.data;
+      
+      const pHistHTML = (d.paymentHistory && d.paymentHistory.length > 0) 
+        ? `<table class="w-full text-sm text-left border border-gray-200 rounded-lg overflow-hidden bg-white"><thead class="bg-gray-100"><tr><th class="px-4 py-2">วันที่ทำจ่าย</th><th class="px-4 py-2 text-right">จำนวนเงิน</th><th class="px-4 py-2 text-center">ลบ</th></tr></thead><tbody class="divide-y divide-gray-100">` 
+          + d.paymentHistory.map((p, i) => `<tr class="hover:bg-gray-50"><td class="px-4 py-2">${p.date}</td><td class="px-4 py-2 text-right text-green-600 font-medium">฿${Number(p.amount).toLocaleString()}</td><td class="px-4 py-2 text-center"><button type="button" onclick="removePayment(${i})" class="text-red-500 bg-red-50 px-2 py-1 rounded hover:bg-red-100">&times;</button></td></tr>`).join('') 
+          + `</tbody></table>`
+        : `<div class="text-center text-gray-400 text-sm py-5 bg-white border border-dashed rounded-lg">ยังไม่มีประวัติทำจ่าย</div>`;
+
+      mc.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[98vh] sm:max-h-[95vh]">
+          <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center sticky top-0 z-10">
+            <h3 class="font-bold text-gray-800 text-base sm:text-lg flex items-center">${ICONS.Edit}<span class="ml-2">${d.id ? `แก้ไขข้อมูล: ${d.fullName}` : 'เพิ่มประวัติผู้สมัคร'}</span></h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+          </div>
+          <form onsubmit="saveEditCandidate(event)" class="p-4 sm:p-6 overflow-y-auto flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2 border-b pb-2"><h4 class="font-bold text-gray-700 text-sm">ข้อมูลผู้สมัคร</h4></div>
+              <div><label class="block text-sm font-medium mb-1">ชื่อ-สกุล</label><input type="text" id="ed-fn" required value="${d.fullName}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">รหัสผู้แนะนำ</label><input type="text" id="ed-rc" value="${d.referrerCode||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">เบอร์โทรศัพท์</label><input type="text" id="ed-ph" value="${d.phone||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ตำแหน่งที่สนใจ</label><input type="text" id="ed-pos" value="${d.interestedPosition||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">สาขา</label><input type="text" id="ed-br" value="${d.targetBranch||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              
+              <div class="md:col-span-2 border-b pb-2 mt-4"><h4 class="font-bold text-gray-700 text-sm">ส่วนของเจ้าหน้าที่</h4></div>
+              <div><label class="block text-sm font-medium mb-1">ชื่อเจ้าหน้าที่</label><input type="text" id="ed-off" value="${d.officerName||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ผลการโทร</label><input type="text" id="ed-cr" value="${d.callResult||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">นัดปฐมนิเทศ</label><input type="date" id="ed-od" value="${d.orientationDate!=='-'?d.orientationDate:''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div><label class="block text-sm font-medium mb-1">ผลสัมภาษณ์</label><input type="text" id="ed-ir" value="${d.interviewResult||''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              <div>
+                <label class="block text-sm font-medium mb-1">สถานะ</label>
+                <select id="ed-st" onchange="handleStatusChange(this.value)" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500">
+                  <option value="ทำงานแล้ว" ${d.status==='ทำงานแล้ว'?'selected':''}>ทำงานแล้ว</option>
+                  <option value="รอเริ่มงาน" ${d.status==='รอเริ่มงาน'?'selected':''}>รอเริ่มงาน</option>
+                  <option value="รอสัมภาษณ์" ${d.status==='รอสัมภาษณ์'?'selected':''}>รอสัมภาษณ์</option>
+                  <option value="ติดตามผล" ${d.status==='ติดตามผล'?'selected':''}>ติดตามผล</option>
+                  <option value="ลาออก" ${d.status==='ลาออก'?'selected':''}>ลาออก</option>
+                  <option value="พ้นสภาพ" ${d.status==='พ้นสภาพ'?'selected':''}>พ้นสภาพ</option>
+                  <option value="ยกเลิก" ${d.status==='ยกเลิก'?'selected':''}>ยกเลิก</option>
+                  <option value="รอประเมิน" ${d.status==='รอประเมิน'?'selected':''}>รอประเมิน</option>
+                  <option value="-" ${d.status==='-'?'selected':''}>-</option>
+                </select>
+              </div>
+              <div><label class="block text-sm font-medium mb-1">วันที่เริ่มงาน</label><input type="date" id="ed-sd" value="${d.startDate!=='-'?d.startDate:''}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+              
+              ${['ลาออก','พ้นสภาพ'].includes(d.status) ? `
+                <div id="ed-end-container"><label class="block text-sm font-bold text-red-700 mb-1">วันที่สิ้นสุด</label><input type="date" required id="ed-ed" value="${d.endDate!=='-'?d.endDate:''}" class="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg focus:ring-2 focus:ring-red-500"></div>
+              ` : ''}
+
+              <div class="md:col-span-2 border-b pb-2 mt-4 flex justify-between items-end"><h4 class="font-bold text-gray-700 text-sm">ประวัติการทำจ่าย</h4><div class="text-sm font-bold text-green-700 bg-green-100 px-3 py-1 rounded-lg border flex items-center">${ICONS.DollarSign} ฿${(d.paidCommission||0).toLocaleString()}</div></div>
+              <div class="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                ${pHistHTML}
+                <div class="flex gap-3 items-end pt-3 border-t mt-3">
+                  <div class="flex-1"><label class="block text-xs mb-1">วันที่ทำจ่าย</label><input type="date" id="ed-np-date" class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></div>
+                  <div class="flex-1"><label class="block text-xs mb-1">จำนวนเงิน</label><input type="number" id="ed-np-amt" class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></div>
+                  <button type="button" onclick="addPayment()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium">+ เพิ่ม</button>
+                </div>
+              </div>
+            </div>
+            <div class="mt-6 pt-4 border-t flex justify-end gap-3">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-100 rounded-lg font-medium">ยกเลิก</button>
+              <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">บันทึก</button>
+            </div>
+          </form>
+        </div>
+      `;
+      mc.classList.remove('hidden');
+    }
+
+    window.handleStatusChange = (val) => {
+      const d = STATE.editModal.data;
+      d.status = val;
+      if(val === 'ทำงานแล้ว' && (!d.startDate || d.startDate==='-')) d.startDate = new Date().toISOString().split('T')[0];
+      if(['ลาออก', 'พ้นสภาพ'].includes(val) && (!d.endDate || d.endDate==='-')) d.endDate = new Date().toISOString().split('T')[0];
+      // Sync form values back to state before re-rendering
+      syncFormToState();
+      renderEditModal();
+    };
+
+    function syncFormToState() {
+      const d = STATE.editModal.data;
+      const getV = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+      d.fullName = getV('ed-fn'); d.referrerCode = getV('ed-rc'); d.phone = getV('ed-ph'); d.interestedPosition = getV('ed-pos');
+      d.targetBranch = getV('ed-br'); d.officerName = getV('ed-off'); d.callResult = getV('ed-cr'); d.orientationDate = getV('ed-od') || '-';
+      d.interviewResult = getV('ed-ir'); d.startDate = getV('ed-sd') || '-'; 
+      if(document.getElementById('ed-ed')) d.endDate = getV('ed-ed') || '-';
+    }
+
+    window.addPayment = () => {
+      syncFormToState();
+      const pd = document.getElementById('ed-np-date').value;
+      const pa = document.getElementById('ed-np-amt').value;
+      if(!pd || !pa) return;
+      STATE.editModal.data.paymentHistory.push({ date: pd, amount: Number(pa) });
+      STATE.editModal.data.paidCommission = STATE.editModal.data.paymentHistory.reduce((s,i)=>s+Number(i.amount),0);
+      renderEditModal();
+    };
+
+    window.removePayment = (idx) => {
+      syncFormToState();
+      STATE.editModal.data.paymentHistory.splice(idx, 1);
+      STATE.editModal.data.paidCommission = STATE.editModal.data.paymentHistory.reduce((s,i)=>s+Number(i.amount),0);
+      renderEditModal();
+    };
+
+    window.saveEditCandidate = async (e) => {
+      e.preventDefault();
+      syncFormToState();
+      const d = STATE.editModal.data;
+      const isNew = !d.id;
+      d.referrerCode = formatRefCode(d.referrerCode);
+      if(isNew) {
+        d.id = STATE.candidates.length ? Math.max(...STATE.candidates.map(c=>c.id))+1 : 1;
+        d.timestamp = new Date().toLocaleString('th-TH',{hour12:false}).replace(',','');
+        STATE.candidates.push(d);
+      } else {
+        const idx = STATE.candidates.findIndex(c=>c.id===d.id);
+        if(idx>-1) STATE.candidates[idx] = d;
+      }
+      closeModal();
+      renderCurrentView();
+
+      if (GOOGLE_SHEET_API_URL) {
+        try {
+          const pay = {...d, paymentHistory: JSON.stringify(d.paymentHistory)};
+          await fetch(GOOGLE_SHEET_API_URL, {
+            method: 'POST', body: JSON.stringify({ action: isNew?'add':'update', data: pay }), headers:{'Content-Type':'text/plain;charset=utf-8'}
+          });
+        } catch(err){}
+      }
+    };
+
+    // --- Commission View ---
+    function renderCommission(container) {
+      const data = {};
+      STATE.candidates.forEach(c => {
+        if(STATE.currentUser.role === 'employee' && String(c.referrerCode||'').trim().toLowerCase() !== String(STATE.currentUser.empCode||'').trim().toLowerCase()) return;
+        if(!c.referrerCode || c.referrerCode === '-') return;
+
+        if(!data[c.referrerCode]) {
+          const u = STATE.users.find(u => u.empCode === c.referrerCode);
+          data[c.referrerCode] = { code: c.referrerCode, name: u?u.name:'', total:0, earned:0, pending:0, details:[] };
+        }
+
+        if(['ทำงานแล้ว','ลาออก','พ้นสภาพ'].includes(c.status) && c.startDate && c.startDate!=='-') {
+          const wd = getCandidateWorkDays(c.startDate, c.endDate, c.status);
+          const c15 = wd>=15?500:0, c30 = wd>=30?1000:0;
+          const tot = c15+c30;
+          const paid = Number(c.paidCommission)||0;
+          const pend = Math.max(0, tot-paid);
+          
+          data[c.referrerCode].total++; data[c.referrerCode].earned+=tot; data[c.referrerCode].pending+=pend;
+          data[c.referrerCode].details.push({ n:c.fullName, sd:c.startDate, ed:c.endDate, st:c.status, wd, c15, c30, tot, paid, pend });
+        }
+      });
+      
+      const res = Object.values(data).filter(d=>d.total>0);
+      const gtEarned = res.reduce((s,i)=>s+i.earned,0);
+      const gtPending = res.reduce((s,i)=>s+i.pending,0);
+      const gtCands = res.reduce((s,i)=>s+i.total,0);
+
+      const htmlRes = res.map(r => `
+        <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <div class="bg-gray-50 px-4 py-3 border-b flex flex-col md:flex-row justify-between gap-3">
+            <div><span class="text-sm text-gray-500">รหัสผู้แนะนำ:</span> <span class="ml-2 font-bold text-lg text-indigo-700">${r.code} <span class="text-gray-600 font-medium text-base">(${r.name})</span></span></div>
+            <div class="flex gap-2">
+              <div class="font-medium text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border text-sm shadow-sm">รอรับ: <b>฿${r.pending.toLocaleString()}</b></div>
+              <div class="font-bold text-green-700 bg-green-100 px-3 py-2 rounded-lg border text-sm shadow-sm">สะสม: <b>฿${r.earned.toLocaleString()}</b></div>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 bg-white text-sm">
+              <thead><tr><th class="px-4 py-3 text-left">ชื่อพนักงานเริ่มงาน</th><th class="px-4 py-3 text-center">เริ่ม/สิ้นสุด</th><th class="px-4 py-3 text-center">จำนวนวัน</th><th class="px-4 py-3 text-center">ครบ 15วัน</th><th class="px-4 py-3 text-center">ครบ 30วัน</th><th class="px-4 py-3 text-right">สะสม</th><th class="px-4 py-3 text-right">รับแล้ว</th><th class="px-4 py-3 text-right">รอรับ</th></tr></thead>
+              <tbody class="divide-y divide-gray-100">
+                ${r.details.map(d=>`
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium">${d.n} ${['ลาออก','พ้นสภาพ'].includes(d.st)?`<span class="ml-1 text-[10px] bg-red-100 text-red-600 px-1 rounded">${d.st}</span>`:''}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">${d.sd} ${['ลาออก','พ้นสภาพ'].includes(d.st)&&d.ed!=='-'?`<div class="text-[10px] text-red-500">ถึง ${d.ed}</div>`:''}</td>
+                    <td class="px-4 py-3 text-center"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-medium">${d.wd} วัน</span></td>
+                    <td class="px-4 py-3 text-center">${d.c15>0?'<span class="text-green-600 font-bold">✓ 500</span>':'-'}</td>
+                    <td class="px-4 py-3 text-center">${d.c30>0?'<span class="text-green-600 font-bold">✓ 1000</span>':'-'}</td>
+                    <td class="px-4 py-3 text-right font-bold text-green-700">${d.tot.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-right text-blue-600">${d.paid>0?d.paid.toLocaleString():'-'}</td>
+                    <td class="px-4 py-3 text-right font-bold text-amber-600">${d.pend>0?d.pend.toLocaleString():'-'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="p-4 sm:p-6"><div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+          <div class="bg-indigo-50 px-4 py-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+              <h2 class="text-xl font-bold flex text-indigo-900">${ICONS.Calculator}<span class="ml-2">สรุปค่าคอมมิชชั่น</span></h2>
+              <p class="text-xs text-indigo-600 mt-1">* หมายเหตุ: ข้อมูลจากฐานข้อมูลผู้สมัคร HR Offline จะไม่ถูกนำมารวมในการคิดค่าคอมมิชชั่น</p>
+            </div>
+          </div>
+          <div class="p-4 sm:p-6">
+            ${STATE.currentUser.role==='admin'?`
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white rounded-xl border p-4 flex items-center"><div class="p-3 bg-blue-100 text-blue-600 rounded-full mr-4">${ICONS.Users}</div><div><p class="text-xs text-gray-500">เริ่มงาน</p><p class="text-xl font-bold">${gtCands}</p></div></div>
+                <div class="bg-white rounded-xl border p-4 flex items-center"><div class="p-3 bg-amber-100 text-amber-600 rounded-full mr-4">${ICONS.Clock}</div><div><p class="text-xs text-gray-500">รอรับ</p><p class="text-xl font-bold text-amber-600">฿${gtPending.toLocaleString()}</p></div></div>
+                <div class="bg-white rounded-xl border p-4 flex items-center"><div class="p-3 bg-green-100 text-green-600 rounded-full mr-4">${ICONS.DollarSign}</div><div><p class="text-xs text-gray-500">สะสม</p><p class="text-xl font-bold text-green-600">฿${gtEarned.toLocaleString()}</p></div></div>
+              </div>`:''}
+            ${res.length===0?'<div class="text-center py-10 text-gray-500">ไม่มีข้อมูล</div>':`<div class="space-y-6">${htmlRes}</div>`}
+          </div>
+        </div></div>
+      `;
+    }
+
+    // --- Payment View ---
+    function renderPayment(container) {
+      const groups = {}; const historyList = [];
+      STATE.candidates.forEach(c => {
+        if(STATE.currentUser.role === 'employee' && String(c.referrerCode||'').trim().toLowerCase() !== String(STATE.currentUser.empCode||'').trim().toLowerCase()) return;
+        
+        // Pending
+        if(['ทำงานแล้ว','ลาออก','พ้นสภาพ'].includes(c.status) && c.startDate && c.startDate!=='-') {
+          const wd = getCandidateWorkDays(c.startDate, c.endDate, c.status);
+          const pend = Math.max(0, (wd>=15?500:0)+(wd>=30?1000:0) - (Number(c.paidCommission)||0));
+          if(pend>0) {
+            const rCode = String(c.referrerCode).trim().toUpperCase();
+            const rUser = STATE.users.find(u => String(u.empCode).trim().toLowerCase() === rCode.toLowerCase());
+            const gk = `${rCode}-${rUser?rUser.name:'ไม่ทราบ'}`;
+            if(!groups[gk]) groups[gk] = { key:gk, code:rCode, name:rUser?rUser.name:'ไม่ทราบ', total:0, details:[] };
+            groups[gk].total += pend;
+            groups[gk].details.push({ id:c.id, name:c.fullName, sd:c.startDate, ed:c.endDate, st:c.status, wd, pend });
+          }
+        }
+        
+        // History
+        if(c.paymentHistory && c.paymentHistory.length>0) {
+          const rUser = STATE.users.find(u => String(u.empCode).trim().toLowerCase() === String(c.referrerCode).trim().toLowerCase());
+          c.paymentHistory.forEach((ph, i) => historyList.push({ id:`${c.id}-${i}`, cName:c.fullName, rCode:c.referrerCode, rName:rUser?rUser.name:'-', date:ph.date, amt:Number(ph.amount) }));
+        }
+      });
+      historyList.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const pList = Object.values(groups);
+
+      const isP = STATE.payment.activeTab === 'pending';
+      const cGroups = STATE.payment.collapsedGroups;
+
+      const pHTML = pList.length===0?'<div class="text-center py-10 text-gray-500">ไม่มีรายการรอทำจ่าย</div>':pList.map(g=>`
+        <div class="border rounded-xl shadow-sm bg-white mb-4">
+          <div class="bg-indigo-50/50 p-4 flex justify-between items-center cursor-pointer" onclick="togglePayGroup('${g.key}')">
+            <div class="flex items-center space-x-3"><div class="text-indigo-400 transform transition-transform ${cGroups[g.key]?'-rotate-90':''}">${ICONS.ChevronDown}</div><div><div class="text-sm">ผู้แนะนำ</div><div class="font-bold text-lg text-indigo-800">${g.code} <span class="text-gray-600 text-base">(${g.name})</span></div></div></div>
+            <div class="flex items-center space-x-4"><div class="text-right"><div class="text-xs">ยอดรวม (${g.details.length} รายการ)</div><div class="font-bold text-amber-600 text-xl">฿${g.total.toLocaleString()}</div></div>${STATE.currentUser.role!=='employee'?`<button onclick="event.stopPropagation(); openPayModal('${g.key}')" class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm">ทำจ่ายรวม</button>`:''}</div>
+          </div>
+          ${!cGroups[g.key]?`
+            <div class="border-t bg-gray-50 p-3"><table class="min-w-full text-sm"><thead><tr><th class="px-4 text-left">ผู้สมัคร</th><th class="px-4 text-center">เริ่มงาน</th><th class="px-4 text-center">อายุงาน</th><th class="px-4 text-right">ยอดรอจ่าย</th></tr></thead><tbody class="divide-y">${g.details.map(d=>`<tr><td class="px-4 py-2">${d.name} ${['ลาออก','พ้นสภาพ'].includes(d.st)?`<span class="text-[10px] bg-red-100 text-red-600 px-1 rounded">${d.st}</span>`:''}</td><td class="px-4 py-2 text-center text-gray-500">${d.sd}</td><td class="px-4 py-2 text-center"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">${d.wd} วัน</span></td><td class="px-4 py-2 text-right text-amber-600">฿${d.pend.toLocaleString()}</td></tr>`).join('')}</tbody></table></div>
+          `:''}
+        </div>
+      `).join('');
+
+      const hHTML = historyList.length===0?'<div class="text-center py-10 text-gray-500">ไม่มีประวัติ</div>':`<table class="min-w-full divide-y bg-white text-sm"><thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left">วันที่ทำจ่าย</th><th class="px-4 py-3 text-left">รหัสผู้แนะนำ</th><th class="px-4 py-3 text-left">ชื่อผู้รับเงิน</th><th class="px-4 py-3 text-left">อ้างอิงพนักงาน</th><th class="px-4 py-3 text-right">จำนวนเงิน</th></tr></thead><tbody class="divide-y">${historyList.map(h=>`<tr><td class="px-4 py-3">${h.date}</td><td class="px-4 py-3 font-bold text-indigo-700">${h.rCode}</td><td class="px-4 py-3">${h.rName}</td><td class="px-4 py-3 text-gray-500">${h.cName}</td><td class="px-4 py-3 text-right font-bold text-green-600">฿${h.amt.toLocaleString()}</td></tr>`).join('')}</tbody></table>`;
+
+      container.innerHTML = `
+        <div class="p-4 sm:p-6 h-full flex flex-col"><div class="bg-white rounded-xl shadow-sm border flex flex-col h-full overflow-hidden">
+          <div class="p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold flex">${ICONS.CreditCard}<span class="ml-2">ระบบจ่ายค่าคอมมิชชั่น</span></h2>
+              <p class="text-xs text-gray-500 mt-1">* ข้อมูลจาก HR Offline จะไม่ถูกนำมารวมในระบบนี้</p>
+            </div>
+            <div class="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto"><button onclick="setPayTab('pending')" class="px-4 py-2 text-sm rounded flex-1 sm:flex-none ${isP?'bg-white text-indigo-600 shadow':'text-gray-600'}">รอทำจ่าย</button><button onclick="setPayTab('history')" class="px-4 py-2 text-sm rounded flex-1 sm:flex-none ${!isP?'bg-white text-indigo-600 shadow':'text-gray-600'}">ประวัติ</button></div>
+          </div>
+          <div class="p-4 sm:p-6 overflow-auto flex-1">${isP ? pHTML : hHTML}</div>
+        </div></div>
+      `;
+
+      // Store pList for modal usage
+      STATE.payment.pendingList = pList;
+    }
+
+    window.setPayTab = (t) => { STATE.payment.activeTab = t; renderCurrentView(); };
+    window.togglePayGroup = (k) => { STATE.payment.collapsedGroups[k] = !STATE.payment.collapsedGroups[k]; renderCurrentView(); };
+
+    window.openPayModal = (k) => {
+      const g = STATE.payment.pendingList.find(x=>x.key===k);
+      if(!g) return;
+      STATE.paymentGroupModal.group = g;
+      STATE.paymentGroupModal.date = new Date().toISOString().split('T')[0];
+      
+      const mc = document.getElementById('global-modal-container');
+      mc.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+          <div class="px-6 py-4 border-b flex justify-between"><h3 class="font-bold text-lg">ยืนยันทำจ่ายรวมกลุ่ม</h3><button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button></div>
+          <form onsubmit="saveGroupPayment(event)" class="p-6">
+            <div class="bg-indigo-50 p-4 rounded-lg space-y-2 text-sm mb-4">
+              <div class="flex justify-between"><span>จ่ายให้:</span><span class="font-bold">${g.code} (${g.name})</span></div>
+              <div class="flex justify-between"><span>จำนวนรายการ:</span><span>${g.details.length}</span></div>
+              <div class="flex justify-between border-t pt-3 mt-3"><span class="font-bold">ยอดจ่ายรวม:</span><span class="font-bold text-amber-600 text-xl">฿${g.total.toLocaleString()}</span></div>
+            </div>
+            <div><label class="block text-sm font-medium mb-1">วันที่ทำจ่าย</label><input type="date" required id="pgm-date" value="${STATE.paymentGroupModal.date}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+            <div class="mt-6 flex justify-end gap-3"><button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-100 rounded-lg">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">ยืนยันการจ่าย</button></div>
+          </form>
+        </div>`;
+      mc.classList.remove('hidden');
+    };
+
+    window.saveGroupPayment = async (e) => {
+      e.preventDefault();
+      const g = STATE.paymentGroupModal.group;
+      const d = document.getElementById('pgm-date').value;
+      if(!g || !d) return;
+
+      const promises = [];
+      g.details.forEach(det => {
+        const c = STATE.candidates.find(x=>x.id===det.id);
+        if(c) {
+          if(!Array.isArray(c.paymentHistory)) {
+             try { c.paymentHistory = JSON.parse(c.paymentHistory); } catch(err) { c.paymentHistory=[]; }
+             if(!Array.isArray(c.paymentHistory)) c.paymentHistory=[];
+          }
+          c.paymentHistory.push({date:d, amount:det.pend});
+          c.paidCommission = c.paymentHistory.reduce((s,i)=>s+Number(i.amount),0);
+          
+          if(GOOGLE_SHEET_API_URL) {
+            promises.push(fetch(GOOGLE_SHEET_API_URL, {method:'POST', body:JSON.stringify({action:'update', data:{...c, paymentHistory:JSON.stringify(c.paymentHistory)}})}));
+          }
+        }
+      });
+
+      closeModal();
+      renderCurrentView();
+
+      if(promises.length>0) {
+        await Promise.all(promises);
+        if(STATE.settings.lineToken) {
+           const cDets = g.details.map(dx => ({ name:dx.name, amount:dx.pend.toLocaleString() }));
+           fetch(GOOGLE_SHEET_API_URL, {method:'POST', body:JSON.stringify({type:'line_notify', data:{token:STATE.settings.lineToken, groupId:STATE.settings.lineGroupId, referrer:`${g.code} (${g.name})`, count:g.details.length, total:g.total.toLocaleString(), date:d, candidates:cDets}})});
+        }
+      }
+    };
+
+    // --- Users Management View ---
+    function getUserTableHTML() {
+      const searchQ = String(STATE.usersView.search || '').toLowerCase();
+      
+      const filteredUsers = STATE.users.filter(u => {
+        if(!searchQ) return true;
+        return String(u.name || '').toLowerCase().includes(searchQ) || 
+               String(u.empCode || '').toLowerCase().includes(searchQ) ||
+               String(u.username || '').toLowerCase().includes(searchQ);
+      });
+
+      return filteredUsers.length === 0 ? `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">ไม่พบข้อมูลพนักงานที่ค้นหา</td></tr>` : filteredUsers.map(u=>`
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium">${u.name}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${u.username}</td>
+          <td class="px-6 py-4 text-sm font-bold text-indigo-600">${u.empCode||'-'}</td>
+          <td class="px-6 py-4 text-sm"><span class="px-2 py-1 rounded-full text-xs font-semibold ${
+            u.role==='admin' ? 'bg-purple-100 text-purple-800' :
+            u.role==='officer' ? 'bg-blue-100 text-blue-800' :
+            u.role==='OnlineOfficer' ? 'bg-cyan-100 text-cyan-800' :
+            u.role==='OfflineOfficer' ? 'bg-orange-100 text-orange-800' :
+            'bg-green-100 text-green-800'}">${u.role}</span></td>
+          <td class="px-6 py-4 text-right">
+            ${STATE.userModal.delId===u.id?`
+              <span class="text-xs text-red-600 mr-2">ยืนยันลบ?</span><button onclick="delUser(${u.id})" class="bg-red-600 text-white px-2 py-1 rounded text-xs mr-1">ลบ</button><button onclick="toggleDelUser(null)" class="bg-gray-200 px-2 py-1 rounded text-xs">ยกเลิก</button>
+            `:`
+              <button onclick="openUserModal(${u.id})" class="text-indigo-600 hover:underline mr-3">แก้ไข</button>
+              <button onclick="toggleDelUser(${u.id})" class="text-red-600 hover:underline" ${u.username==='admin'?'disabled style="opacity:0.3"':''}>ลบ</button>
+            `}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderUsers(container) {
+      if(STATE.currentUser.role !== 'admin') { container.innerHTML = '<div class="p-10 text-center text-red-500">Access Denied</div>'; return; }
+      
+      if(!STATE.usersView) STATE.usersView = { search: '' };
+
+      container.innerHTML = `
+        <div class="p-4 sm:p-6"><div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+          <div class="p-4 border-b bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h3 class="font-medium text-gray-700">รายชื่อผู้มีสิทธิ์</h3>
+            <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                <div class="relative w-full sm:w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        ${ICONS.Search}
+                    </div>
+                    <input type="text" value="${STATE.usersView.search}" oninput="updateUserSearch(this.value)" placeholder="ค้นหาชื่อ, รหัสพนักงาน..." class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button onclick="openUserModal(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm flex-shrink-0 whitespace-nowrap">+ เพิ่มผู้ใช้</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto"><table class="min-w-full divide-y bg-white text-left">
+            <thead><tr><th class="px-6 py-3 text-xs text-gray-500 uppercase">ชื่อ</th><th class="px-6 py-3 text-xs text-gray-500 uppercase">Username</th><th class="px-6 py-3 text-xs text-gray-500 uppercase">รหัสพนักงาน</th><th class="px-6 py-3 text-xs text-gray-500 uppercase">Role</th><th class="px-6 py-3 text-right text-xs text-gray-500 uppercase">จัดการ</th></tr></thead>
+            <tbody id="users-tbody" class="divide-y">${getUserTableHTML()}</tbody>
+          </table></div>
+        </div></div>
+      `;
+    }
+
+    window.updateUserSearch = (val) => { 
+      STATE.usersView.search = val; 
+      const tbody = document.getElementById('users-tbody');
+      if(tbody) tbody.innerHTML = getUserTableHTML();
+    };
+    
+    window.toggleDelUser = (id) => { 
+      STATE.userModal.delId = id; 
+      const tbody = document.getElementById('users-tbody');
+      if(tbody) tbody.innerHTML = getUserTableHTML();
+    };
+
+    window.delUser = async (id) => {
+      STATE.users = STATE.users.filter(u=>u.id!==id);
+      STATE.userModal.delId = null;
+      renderCurrentView();
+      if(GOOGLE_SHEET_API_URL) fetch(GOOGLE_SHEET_API_URL, {method:'POST', body:JSON.stringify({type:'user', action:'delete', data:{id}})});
+    };
+
+    window.openUserModal = (id) => {
+      let d = {id:null, username:'', password:'', role:'employee', name:'', empCode:''};
+      if(id) d = {...STATE.users.find(u=>u.id===id)};
+      
+      const mc = document.getElementById('global-modal-container');
+      mc.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+          <div class="px-6 py-4 border-b flex justify-between"><h3 class="font-bold">${d.id?'แก้ไขผู้ใช้':'เพิ่มผู้ใช้'}</h3><button onclick="closeModal()" class="text-xl">&times;</button></div>
+          <form onsubmit="saveUser(event)" class="p-6 space-y-4">
+            <input type="hidden" id="um-id" value="${d.id||''}">
+            <div><label class="block text-sm mb-1">ชื่อ</label><input type="text" required id="um-nm" value="${d.name}" class="w-full border p-2 rounded"></div>
+            <div><label class="block text-sm mb-1">Username</label><input type="text" required id="um-un" value="${d.username}" class="w-full border p-2 rounded" ${d.username==='admin'?'disabled':''}></div>
+            <div><label class="block text-sm mb-1">รหัสพนักงาน</label><input type="text" id="um-ec" value="${d.empCode}" class="w-full border p-2 rounded"></div>
+            <div><label class="block text-sm mb-1">Password</label><input type="text" required id="um-pw" value="${d.password}" class="w-full border p-2 rounded"></div>
+            <div><label class="block text-sm mb-1">Role</label><select id="um-rl" class="w-full border p-2 rounded" ${d.username==='admin'?'disabled':''}>
+              <option value="employee" ${d.role==='employee'?'selected':''}>พนักงาน (Employee)</option>
+              <option value="officer" ${d.role==='officer'?'selected':''}>เจ้าหน้าที่ (Officer)</option>
+              <option value="OnlineOfficer" ${d.role==='OnlineOfficer'?'selected':''}>เจ้าหน้าที่ออนไลน์ (OnlineOfficer)</option>
+              <option value="OfflineOfficer" ${d.role==='OfflineOfficer'?'selected':''}>เจ้าหน้าที่ออฟไลน์ (OfflineOfficer)</option>
+              <option value="admin" ${d.role==='admin'?'selected':''}>ผู้ดูแลระบบ (Admin)</option>
+            </select></div>
+            <div class="mt-4 flex justify-end gap-3"><button type="button" onclick="closeModal()" class="bg-gray-100 px-4 py-2 rounded">ยกเลิก</button><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">บันทึก</button></div>
+          </form>
+        </div>`;
+      mc.classList.remove('hidden');
+    };
+
+    window.saveUser = (e) => {
+      e.preventDefault();
+      const isN = !document.getElementById('um-id').value;
+      const d = {
+        id: isN ? (STATE.users.length?Math.max(...STATE.users.map(u=>u.id))+1:1) : Number(document.getElementById('um-id').value),
+        name: document.getElementById('um-nm').value,
+        username: document.getElementById('um-un').value,
+        empCode: formatRefCode(document.getElementById('um-ec').value),
+        password: document.getElementById('um-pw').value,
+        role: document.getElementById('um-rl').value
+      };
+      if(isN) STATE.users.push(d); else STATE.users[STATE.users.findIndex(x=>x.id===d.id)]=d;
+      closeModal(); renderCurrentView();
+      if(GOOGLE_SHEET_API_URL) fetch(GOOGLE_SHEET_API_URL, {method:'POST', body:JSON.stringify({type:'user', action:isN?'add':'update', data:d})});
+    };
+
+    // --- Settings View ---
+    function renderSettings(container) {
+       container.innerHTML = `
+        <div class="p-4 sm:p-6"><div class="bg-white rounded-xl shadow-sm border max-w-2xl mx-auto">
+          <div class="px-6 py-4 border-b flex items-center"><div class="bg-indigo-100 p-2 rounded-lg text-indigo-600 mr-3">${ICONS.Settings}</div><div><h2 class="text-xl font-bold">ตั้งค่าระบบ (Settings)</h2><p class="text-sm text-gray-500">จัดการการเชื่อมต่อ API และแจ้งเตือน</p></div></div>
+          <form onsubmit="saveSettings(event)" class="p-6 space-y-6">
+            <div><h3 class="text-lg font-semibold flex mb-4"><span class="text-green-500 mr-2">${ICONS.MessageCircle}</span> LINE Notify</h3>
+              <div class="space-y-4">
+                <div><label class="block text-sm font-medium mb-1">LINE Access Token</label><input type="text" id="set-t" value="${STATE.settings.lineToken||''}" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-medium mb-1">Group ID / User ID</label><input type="text" id="set-g" value="${STATE.settings.lineGroupId||''}" class="w-full border p-2 rounded"></div>
+              </div>
+            </div>
+            <div class="border-t pt-4 flex justify-between items-center"><span id="set-msg" class="text-sm text-green-600"></span><button type="submit" class="bg-indigo-600 text-white px-6 py-2.5 rounded-lg">บันทึก</button></div>
+          </form>
+        </div></div>
+       `;
+    }
+
+    window.saveSettings = async (e) => {
+      e.preventDefault();
+      STATE.settings.lineToken = document.getElementById('set-t').value;
+      STATE.settings.lineGroupId = document.getElementById('set-g').value;
+      document.getElementById('set-msg').innerText = 'กำลังบันทึก...';
+      if(GOOGLE_SHEET_API_URL) {
+        try {
+          await fetch(GOOGLE_SHEET_API_URL, {method:'POST', body:JSON.stringify({type:'settings', action:'update', data:STATE.settings})});
+          document.getElementById('set-msg').innerText = 'บันทึกสำเร็จ!';
+        } catch(e) { document.getElementById('set-msg').innerText = 'เกิดข้อผิดพลาด'; }
+        setTimeout(()=> { const el = document.getElementById('set-msg'); if(el) el.innerText=''; }, 3000);
+      }
+    };
+
+    // --- Bootstrap ---
+    initApp();
+
+  </script>
+</body>
+</html>
