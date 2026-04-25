@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PBD Affiliate</title>
+  <title>HR System - PBD Group</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -26,7 +26,7 @@
       <div class="text-center">
         <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4" id="icon-login"></div>
         <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">เข้าสู่ระบบ</h2>
-        <p class="text-sm text-gray-500 mt-2">ระบบจัดการประวัติการสมัครงานและค่าคอมมิชชั่น (PBD Affiliate)</p>
+        <p class="text-sm text-gray-500 mt-2">ระบบจัดการประวัติการสมัครงาน (HR System)</p>
       </div>
       <div id="login-error" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center border border-red-200">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
       <form id="login-form" class="space-y-4">
@@ -43,17 +43,12 @@
         </button>
       </form>
       <div class="mt-4 text-xs text-gray-400 text-center bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-1">
-        <strong>การเข้าสู่ระบบ:ชื่อผู้ใช้งาน และ รหัสผ่าน คือรหัสพนักงาน</strong><br/>
-        **ระบบแจ้งเตือน ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาติดต่อผู้ดูแลระบบ**
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-  <div>
-    </div>
-  
-  <div>
-    </div>
-</div>
-        ฝ่ายไอทีPBD Group
-       
+        <strong>ข้อมูลทดสอบการเข้าระบบ: (รหัสผ่าน password)</strong><br/>
+        Admin: <code>admin</code> |
+        เจ้าหน้าที่: <code>officer</code><br/>
+        เจ้าหน้าที่ (Online): <code>on_off</code> |
+        เจ้าหน้าที่ (Offline): <code>off_off</code><br/>
+        พนักงาน: <code>emp</code>
       </div>
     </div>
   </div>
@@ -145,9 +140,9 @@
     // --- Icons SVG Strings ---
     const ICONS = {
       Users: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+      Wallet: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>`,
       FileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
-      LogOut: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
-      Search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
+      LogOut: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
       Download: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
       Edit: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
       Calculator: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="16" y1="10" x2="16" y2="10"></line><line x1="12" y1="10" x2="12" y2="10"></line><line x1="8" y1="10" x2="8" y2="10"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="12" y1="18" x2="12" y2="18"></line><line x1="8" y1="18" x2="8" y2="18"></line></svg>`,
@@ -162,7 +157,8 @@
       ExternalLink: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`,
       ChevronDown: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
       Settings: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
-      MessageCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`
+      MessageCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`,
+      Trophy: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`
     };
 
     // Set static icons
@@ -183,14 +179,15 @@
       isMobileMenuOpen: false,
       
       // Feature Specific State
-      dashboard: { filters: { dateFrom: '', dateTo: '', referrer: '', branch: '', position: '' } },
-      hrOffline: { filters: { dateFrom: '', dateTo: '', name: '', branch: '', position: '', sortDate: 'desc' } }, // 📌 เพิ่ม sortDate ใน State Filter
+      dashboard: { filters: { dateFrom: '', dateTo: '', referrer: '', branch: '', position: '' }, showFilters: window.innerWidth > 768 },
+      hrOffline: { filters: { dateFrom: '', dateTo: '', name: '', branch: '', position: '', sortDate: 'desc' }, showFilters: window.innerWidth > 768 }, // 📌 เพิ่ม sortDate ใน State Filter
       payment: { activeTab: 'pending', collapsedGroups: {} },
       editModal: { data: null, newDate: '', newAmount: '' },
       hrOfflineEditModal: { data: null }, // 📌 เพิ่ม State Modal สำหรับ HR Offline
       userModal: { data: null },
       usersView: { search: '' }, // 📌 เพิ่ม State สำหรับช่องค้นหาหน้าจัดการพนักงาน
-      paymentGroupModal: { group: null, date: new Date().toISOString().split('T')[0] }
+      paymentGroupModal: { group: null, date: new Date().toISOString().split('T')[0] },
+      leaderboard: { month: new Date().toISOString().slice(0,7) } // 📌 State สำหรับกระดานผู้นำ
     };
 
     // --- Helpers ---
@@ -254,8 +251,12 @@
           document.getElementById('sidebar-user-role').innerText = `Role: ${STATE.currentUser.role}`;
           document.getElementById('mobile-header-name').innerText = STATE.currentUser.name;
           
+          let defaultView = 'overview';
+          if (STATE.currentUser.role === 'employee') defaultView = 'wallet';
+          if (STATE.currentUser.role === 'OfflineOfficer') defaultView = 'hrOffline'; 
+          
           const lastView = localStorage.getItem('hr_last_view');
-          STATE.currentView = lastView || 'overview';
+          STATE.currentView = lastView || defaultView;
           renderSidebar();
         } catch(e) {
           localStorage.removeItem('hr_session_user');
@@ -339,7 +340,7 @@
         
         // 📌 ตั้งค่าหน้าแรกตาม Role ที่เข้าสู่ระบบ
         let defaultView = 'overview';
-        if (user.role === 'employee') defaultView = 'dashboard';
+        if (user.role === 'employee') defaultView = 'wallet'; // 📌 พนักงานให้เข้าหน้า Wallet ก่อน
         if (user.role === 'OfflineOfficer') defaultView = 'hrOffline'; // Offline Officer เข้าหน้านี้เป็นหน้าแรก
         
         navigate(defaultView);
@@ -398,6 +399,15 @@
         html += `<button onclick="navigate('overview')" class="${btnClass('overview')}">${ICONS.PieChart}<span>Dashboard</span></button>`;
       }
       
+      if (['employee'].includes(role)) {
+        html += `<button onclick="navigate('wallet')" class="${btnClass('wallet')}">${ICONS.Wallet}<span>กระเป๋าเงิน (My Wallet)</span></button>`;
+      }
+
+      // 📌 เพิ่มเมนู กระดานผู้นำ (Leaderboard) สำหรับพนักงานทุกคนยกเว้น OfflineOfficer
+      if (['admin', 'officer', 'OnlineOfficer', 'employee'].includes(role)) {
+        html += `<button onclick="navigate('leaderboard')" class="${btnClass('leaderboard')}">${ICONS.Trophy}<span>กระดานผู้นำ (Leaderboard)</span></button>`;
+      }
+      
       if (['admin', 'officer', 'OnlineOfficer', 'employee'].includes(role)) {
         html += `<button onclick="navigate('dashboard')" class="${btnClass('dashboard')}">${ICONS.FileText}<span>ข้อมูลผู้สมัคร</span></button>`;
       }
@@ -414,7 +424,7 @@
         html += `<button onclick="navigate('payment')" class="${btnClass('payment')}">${ICONS.CreditCard}<span>ระบบทำจ่าย & ประวัติ</span></button>`;
       }
       
-      if (['admin', 'officer', 'OnlineOfficer', 'employee'].includes(role)) {
+      if (['admin', 'officer', 'OnlineOfficer'].includes(role)) {
         html += `<button onclick="navigate('commission')" class="${btnClass('commission')}">${ICONS.Calculator}<span>รายการค่าคอมมิชชั่น</span></button>`;
       }
       
@@ -434,6 +444,8 @@
 
       switch(STATE.currentView) {
         case 'overview': renderOverview(container); break;
+        case 'wallet': renderWallet(container); break;
+        case 'leaderboard': renderLeaderboard(container); break; // 📌 Render Leaderboard
         case 'dashboard': renderDashboard(container); break;
         case 'hrOffline': renderHrOffline(container); break;
         case 'payment': renderPayment(container); break;
@@ -446,6 +458,317 @@
     // =========================================================================
     // VIEWS RENDERING LOGIC
     // =========================================================================
+
+    // --- Leaderboard View (กระดานผู้นำ) ---
+    function renderLeaderboard(container) {
+      const fMonth = STATE.leaderboard.month; // "YYYY-MM"
+      
+      const stats = {};
+      STATE.candidates.forEach(c => {
+         const rCode = c.referrerCode;
+         if(!rCode || rCode === '-') return;
+         
+         if(!stats[rCode]) {
+            const u = STATE.users.find(x => String(x.empCode).toUpperCase() === String(rCode).toUpperCase());
+            stats[rCode] = { name: u ? u.name : 'พนักงาน', code: rCode, count: 0, commission: 0 };
+         }
+
+         // 1. นับยอดแนะนำ (ดูจากประทับเวลาว่าอยู่ในเดือนที่เลือกหรือไม่)
+         // รูปแบบ timestamp อาจเป็น YYYY-MM-DD หรือ DD/MM/YYYY
+         let cMonth = '';
+         const datePart = (c.timestamp || '').split(' ')[0];
+         if (datePart.includes('-')) {
+             cMonth = datePart.substring(0,7); // YYYY-MM
+         } else if (datePart.includes('/')) {
+             const p = datePart.split('/'); // DD/MM/YYYY
+             if (p.length === 3) cMonth = `${p[2]}-${p[1].padStart(2, '0')}`;
+         }
+         
+         if (cMonth === fMonth) {
+             stats[rCode].count += 1;
+         }
+
+         // 2. นับยอดคอมมิชชั่น (ดูจากประวัติการทำจ่ายที่จ่ายในเดือนที่เลือก)
+         if (Array.isArray(c.paymentHistory)) {
+             c.paymentHistory.forEach(ph => {
+                 let pMonth = '';
+                 if (ph.date && ph.date.includes('-')) {
+                     pMonth = ph.date.substring(0,7);
+                 }
+                 if (pMonth === fMonth) {
+                     stats[rCode].commission += Number(ph.amount) || 0;
+                 }
+             });
+         }
+      });
+      
+      const arr = Object.values(stats);
+      const topRef = [...arr].sort((a,b) => b.count - a.count).filter(x => x.count > 0).slice(0, 10);
+      const topEarn = [...arr].sort((a,b) => b.commission - a.commission).filter(x => x.commission > 0).slice(0, 10);
+
+      const renderItem = (item, index, type) => {
+          let rankClass = "text-gray-500 font-bold";
+          let bgClass = "";
+          let badge = "";
+          
+          if (index === 0) { rankClass = "text-yellow-600 text-xl font-extrabold"; bgClass = "bg-yellow-50/60 border-l-4 border-yellow-400"; badge = "🥇"; } 
+          else if (index === 1) { rankClass = "text-gray-400 text-lg font-bold"; bgClass = "bg-gray-50 border-l-4 border-gray-300"; badge = "🥈"; } 
+          else if (index === 2) { rankClass = "text-amber-700 text-lg font-bold"; bgClass = "bg-orange-50/40 border-l-4 border-orange-300"; badge = "🥉"; } 
+          else { rankClass = "text-gray-400 font-medium"; badge = `${index + 1}`; bgClass = "border-l-4 border-transparent"; }
+
+          const valStr = type === 'count' ? `${item.count} คน` : `฿${item.commission.toLocaleString()}`;
+          const valColor = type === 'count' ? 'text-indigo-600' : 'text-green-600';
+
+          return `
+          <li class="flex items-center justify-between p-4 hover:bg-gray-100 transition-colors ${bgClass}">
+              <div class="flex items-center gap-4">
+                  <div class="w-8 text-center ${rankClass}">${badge}</div>
+                  <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">${item.name.charAt(0)}</div>
+                      <div>
+                          <p class="font-bold text-gray-800 text-sm sm:text-base">${item.name}</p>
+                          <p class="text-xs text-gray-500">รหัส: ${item.code}</p>
+                      </div>
+                  </div>
+              </div>
+              <div class="font-bold ${valColor} text-lg">
+                  ${valStr}
+              </div>
+          </li>
+          `;
+      };
+
+      const topRefHTML = topRef.length > 0 ? topRef.map((item, i) => renderItem(item, i, 'count')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการแนะนำในเดือนนี้</li>';
+      const topEarnHTML = topEarn.length > 0 ? topEarn.map((item, i) => renderItem(item, i, 'comm')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการจ่ายค่าคอมมิชชั่นในเดือนนี้</li>';
+
+      container.innerHTML = `
+        <div class="p-4 sm:p-6 max-w-5xl mx-auto h-full overflow-auto pb-20">
+           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+              <div>
+                 <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">${ICONS.Trophy} กระดานผู้นำ (Leaderboard)</h2>
+                 <p class="text-sm text-gray-500">จัดอันดับยอดแนะนำและรายได้ประจำเดือน</p>
+              </div>
+              <div class="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-gray-200 w-full sm:w-auto">
+                 <label class="text-sm font-medium text-gray-600 pl-2">เลือกเดือน:</label>
+                 <input type="month" value="${fMonth}" onchange="updateLeaderboardMonth(this.value)" class="border-none bg-gray-50 p-2 rounded text-sm font-bold text-indigo-700 focus:ring-0 cursor-pointer flex-1">
+              </div>
+           </div>
+
+           <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2 shadow-sm">
+             <span>💡 <strong>Tip:</strong> หากต้องการดูข้อมูลทดสอบที่มีในระบบ ลองเปลี่ยนเดือนเป็น <strong>ตุลาคม หรือ พฤศจิกายน 2023</strong> ดูนะครับ</span>
+           </div>
+
+           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Top Referrers -->
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                 <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white flex justify-between items-center shadow-inner">
+                    <div class="flex items-center gap-3">
+                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.Users}</div>
+                       <div>
+                         <h3 class="font-bold text-lg leading-tight">นักแนะนำยอดเยี่ยม</h3>
+                         <p class="text-xs text-blue-100">เรียงตามจำนวนคนที่แนะนำมาได้</p>
+                       </div>
+                    </div>
+                 </div>
+                 <div class="p-0 flex-1 bg-gray-50/30">
+                    <ul class="divide-y divide-gray-100">
+                       ${topRefHTML}
+                    </ul>
+                 </div>
+              </div>
+
+              <!-- Top Earners -->
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                 <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-white flex justify-between items-center shadow-inner">
+                    <div class="flex items-center gap-3">
+                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.DollarSign}</div>
+                       <div>
+                         <h3 class="font-bold text-lg leading-tight">เศรษฐีประจำเดือน</h3>
+                         <p class="text-xs text-orange-100">เรียงตามยอดค่าคอมมิชชั่นที่ได้รับแล้ว</p>
+                       </div>
+                    </div>
+                 </div>
+                 <div class="p-0 flex-1 bg-gray-50/30">
+                    <ul class="divide-y divide-gray-100">
+                       ${topEarnHTML}
+                    </ul>
+                 </div>
+              </div>
+           </div>
+        </div>
+      `;
+    }
+
+    window.updateLeaderboardMonth = (val) => {
+        STATE.leaderboard.month = val;
+        renderCurrentView();
+    };
+
+
+    // --- Wallet View (For Employees) ---
+    function renderWallet(container) {
+      const myCode = String(STATE.currentUser.empCode || '').trim().toLowerCase();
+      const myReferrals = STATE.candidates.filter(c => String(c.referrerCode || '').trim().toLowerCase() === myCode);
+
+      let totalEarned = 0;
+      let totalPaid = 0;
+      let totalPending = 0;
+      let startedWorkCount = 0;
+      
+      // ข้อมูลสำหรับกราฟ (ย้อนหลัง 6 เดือน)
+      const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      const currentMonth = new Date().getMonth();
+      const chartData = [0,0,0,0,0,0]; 
+      const chartLabels = [];
+      for(let i=5; i>=0; i--) {
+        let mIndex = currentMonth - i;
+        if(mIndex < 0) mIndex += 12;
+        chartLabels.push(monthNames[mIndex]);
+      }
+
+      myReferrals.forEach(c => {
+        if(['ทำงานแล้ว', 'ลาออก', 'พ้นสภาพ'].includes(c.status) && c.startDate && c.startDate !== '-') {
+           startedWorkCount++;
+           const wd = getCandidateWorkDays(c.startDate, c.endDate, c.status);
+           const earned = (wd >= 15 ? 500 : 0) + (wd >= 30 ? 1000 : 0);
+           const paid = Number(c.paidCommission) || 0;
+           const pending = Math.max(0, earned - paid);
+
+           totalEarned += earned;
+           totalPaid += paid;
+           totalPending += pending;
+           
+           // คำนวณกราฟจากเดือนที่เริ่มงาน
+           const d = new Date(c.startDate);
+           const m = d.getMonth();
+           for(let i=0; i<6; i++) {
+             let mIndex = currentMonth - (5-i);
+             if(mIndex < 0) mIndex += 12;
+             if(m === mIndex) {
+               chartData[i] += earned;
+             }
+           }
+        }
+      });
+      
+      const maxChartVal = Math.max(...chartData, 1000); // ฐานสำหรับสเกลความสูงกราฟ
+      
+      const chartHTML = chartData.map((val, idx) => {
+        const heightPct = (val / maxChartVal) * 100;
+        return `
+          <div class="flex flex-col items-center justify-end h-full">
+            <div class="text-[10px] text-indigo-500 font-bold mb-1 opacity-0 hover:opacity-100 transition-opacity">฿${val}</div>
+            <div class="w-8 sm:w-12 bg-indigo-100 rounded-t-md relative group cursor-pointer" style="height: ${heightPct}%;">
+              <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 shadow-lg">฿${val.toLocaleString()}</div>
+              <div class="w-full bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-md absolute bottom-0" style="height: 100%;"></div>
+            </div>
+            <div class="text-xs text-gray-500 mt-2">${chartLabels[idx]}</div>
+          </div>
+        `;
+      }).join('');
+      
+      const listHTML = myReferrals.length === 0 ? '<div class="text-center py-6 text-gray-400">ยังไม่มีประวัติการแนะนำ</div>' : myReferrals.map(c => {
+         let stColor = 'bg-gray-100 text-gray-600';
+         if(c.status === 'ทำงานแล้ว') stColor = 'bg-green-100 text-green-700';
+         else if(c.status === 'รอเริ่มงาน' || c.status === 'รอสัมภาษณ์') stColor = 'bg-blue-100 text-blue-700';
+         else if(['ยกเลิก','ลาออก','พ้นสภาพ'].includes(c.status)) stColor = 'bg-red-100 text-red-700';
+         
+         const wd = getCandidateWorkDays(c.startDate, c.endDate, c.status);
+         const earned = (['ทำงานแล้ว', 'ลาออก', 'พ้นสภาพ'].includes(c.status) && c.startDate && c.startDate !== '-') ? ((wd >= 15 ? 500 : 0) + (wd >= 30 ? 1000 : 0)) : 0;
+         
+         return `
+          <div class="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">${c.fullName.charAt(0)}</div>
+              <div>
+                <p class="font-semibold text-gray-800">${c.fullName}</p>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-xs px-2 py-0.5 rounded-full ${stColor}">${c.status}</span>
+                  <span class="text-xs text-gray-500 hidden sm:inline">${c.interestedPosition}</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="font-bold text-green-600">+฿${earned.toLocaleString()}</p>
+              <p class="text-xs text-gray-400">${c.timestamp.split(' ')[0]}</p>
+            </div>
+          </div>
+         `;
+      }).reverse().join(''); // ล่าสุดขึ้นก่อน
+
+      container.innerHTML = `
+        <div class="p-4 sm:p-6 pb-20 max-w-3xl mx-auto h-full overflow-auto">
+          <!-- Header -->
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-800">My Wallet</h2>
+              <p class="text-sm text-gray-500">กระเป๋าเงินและค่าคอมมิชชั่นของคุณ</p>
+            </div>
+            <div class="bg-white p-1 rounded-full shadow-sm border border-gray-100">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${STATE.currentUser.username}" class="w-12 h-12 rounded-full" alt="avatar" />
+            </div>
+          </div>
+
+          <!-- Wallet Card -->
+          <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 rounded-2xl p-6 sm:p-8 text-white shadow-xl mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full bg-white opacity-10 blur-2xl"></div>
+            <div class="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white opacity-10 blur-xl"></div>
+            
+            <div class="relative z-10">
+              <p class="text-indigo-100 text-sm font-medium mb-1">ยอดเงินรอรับ (Pending Balance)</p>
+              <div class="flex items-baseline gap-2">
+                <span class="text-4xl sm:text-5xl font-extrabold tracking-tight">฿${totalPending.toLocaleString()}</span>
+                <span class="text-indigo-200 text-sm font-medium mb-1">THB</span>
+              </div>
+              
+              <div class="mt-8 flex justify-between items-end border-t border-indigo-400/30 pt-5">
+                <div>
+                  <p class="text-xs text-indigo-200 mb-0.5">ยอดสะสมทั้งหมด (Total Earned)</p>
+                  <p class="text-lg sm:text-xl font-bold">฿${totalEarned.toLocaleString()}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-indigo-200 mb-0.5">รับแล้ว (Paid)</p>
+                  <p class="text-lg sm:text-xl font-bold text-green-300">฿${totalPaid.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-2 gap-4 mb-6">
+             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col justify-center">
+                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-3">${ICONS.Users}</div>
+                <p class="text-xs sm:text-sm text-gray-500 font-medium">แนะนำทั้งหมด</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-800">${myReferrals.length} <span class="text-sm font-normal text-gray-500">คน</span></p>
+             </div>
+             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col justify-center">
+                <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-3">${ICONS.PieChart}</div>
+                <p class="text-xs sm:text-sm text-gray-500 font-medium">เริ่มงานสำเร็จ</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-800">${startedWorkCount} <span class="text-sm font-normal text-gray-500">คน</span></p>
+             </div>
+          </div>
+
+          <!-- Chart Section -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+            <h3 class="font-bold text-gray-800 mb-6 text-sm sm:text-base flex items-center gap-2">${ICONS.BarChart} สถิติรายได้ 6 เดือนย้อนหลัง</h3>
+            <div class="h-40 sm:h-48 flex items-end justify-between gap-2 border-b border-gray-100 pb-2">
+              ${chartHTML}
+            </div>
+          </div>
+
+          <!-- Transaction History -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 class="font-bold text-gray-800 text-sm sm:text-base flex items-center gap-2">${ICONS.FileText} ประวัติการแนะนำ</h3>
+            </div>
+            <div class="divide-y divide-gray-100">
+              ${listHTML}
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
 
     // --- Overview View ---
     function renderOverview(container) {
@@ -533,6 +856,7 @@
     // --- Dashboard View ---
     function renderDashboard(container) {
       const f = STATE.dashboard.filters;
+      const showF = STATE.dashboard.showFilters;
       let filtered = STATE.candidates.filter(c => {
         if (STATE.currentUser.role === 'employee' && String(c.referrerCode||'').trim().toLowerCase() !== String(STATE.currentUser.empCode||'').trim().toLowerCase()) return false;
         if (f.dateFrom && c.timestamp.split(' ')[0] < f.dateFrom) return false;
@@ -621,15 +945,20 @@
             </div>
           </div>
           <div class="bg-white p-4 mx-4 sm:mx-6 mt-4 sm:mt-6 rounded-xl shadow-sm border border-gray-200">
-            <div class="flex items-center space-x-2 mb-4 text-gray-700 font-medium">${ICONS.Search}<span>ตัวกรองข้อมูล</span></div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div><label class="block text-xs text-gray-500 mb-1">จากวันที่</label><input type="date" id="f-df" value="${f.dateFrom}" onchange="updateDashFilter('dateFrom', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">ถึงวันที่</label><input type="date" id="f-dt" value="${f.dateTo}" onchange="updateDashFilter('dateTo', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">รหัสผู้แนะนำ</label><input type="text" id="f-ref" value="${f.referrer}" onchange="updateDashFilter('referrer', this.value)" placeholder="พิมพ์รหัส..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">สาขา</label><input type="text" id="f-br" value="${f.branch}" onchange="updateDashFilter('branch', this.value)" placeholder="ค้นหาสาขา..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">ตำแหน่ง</label><input type="text" id="f-pos" value="${f.position}" onchange="updateDashFilter('position', this.value)" placeholder="ค้นหาตำแหน่ง..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+            <div class="flex items-center justify-between cursor-pointer" onclick="toggleDashFilter()">
+              <div class="flex items-center space-x-2 text-gray-700 font-medium">${ICONS.Search}<span>ตัวกรองข้อมูล</span></div>
+              <div class="text-gray-400 transform transition-transform ${showF ? 'rotate-180' : ''}">${ICONS.ChevronDown}</div>
             </div>
-            <div class="mt-4 flex justify-end"><button onclick="clearDashFilter()" class="text-sm text-gray-600 hover:text-indigo-600 font-medium px-4 py-2 w-full sm:w-auto bg-gray-100 sm:bg-transparent rounded">ล้างตัวกรอง</button></div>
+            <div class="${showF ? 'block' : 'hidden'} mt-4 pt-4 border-t border-gray-100">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div><label class="block text-xs text-gray-500 mb-1">จากวันที่</label><input type="date" id="f-df" value="${f.dateFrom}" onchange="updateDashFilter('dateFrom', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">ถึงวันที่</label><input type="date" id="f-dt" value="${f.dateTo}" onchange="updateDashFilter('dateTo', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">รหัสผู้แนะนำ</label><input type="text" id="f-ref" value="${f.referrer}" onchange="updateDashFilter('referrer', this.value)" placeholder="พิมพ์รหัส..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">สาขา</label><input type="text" id="f-br" value="${f.branch}" onchange="updateDashFilter('branch', this.value)" placeholder="ค้นหาสาขา..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">ตำแหน่ง</label><input type="text" id="f-pos" value="${f.position}" onchange="updateDashFilter('position', this.value)" placeholder="ค้นหาตำแหน่ง..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+              </div>
+              <div class="mt-4 flex justify-end"><button onclick="clearDashFilter()" class="text-sm text-gray-600 hover:text-indigo-600 font-medium px-4 py-2 w-full sm:w-auto bg-gray-100 sm:bg-transparent rounded">ล้างตัวกรอง</button></div>
+            </div>
           </div>
           <div class="flex-1 min-h-0 m-4 sm:m-6 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
             <div class="flex-1 overflow-auto">
@@ -647,12 +976,12 @@
 
     window.updateDashFilter = (key, val) => { STATE.dashboard.filters[key] = val; renderCurrentView(); };
     window.clearDashFilter = () => { STATE.dashboard.filters = {dateFrom:'', dateTo:'', referrer:'', branch:'', position:''}; renderCurrentView(); };
+    window.toggleDashFilter = () => { STATE.dashboard.showFilters = !STATE.dashboard.showFilters; renderCurrentView(); };
 
     // --- HR Offline View ---
     function renderHrOffline(container) {
       const f = STATE.hrOffline.filters;
-      
-      // 📌 กรองข้อมูลสำหรับ HR Offline
+      const showF = STATE.hrOffline.showFilters;
       let filtered = STATE.hrOfflineCandidates.filter(c => {
         if (f.dateFrom && c.timestamp.split(' ')[0] < f.dateFrom) return false;
         if (f.dateTo && c.timestamp.split(' ')[0] > f.dateTo) return false;
@@ -764,22 +1093,27 @@
 
           <!-- 📌 ส่วนตัวกรอง (Filter) สำหรับ HR Offline -->
           <div class="bg-white p-4 mx-4 sm:mx-6 mt-4 sm:mt-6 rounded-xl shadow-sm border border-gray-200">
-            <div class="flex items-center space-x-2 mb-4 text-gray-700 font-medium">${ICONS.Search}<span>ตัวกรองข้อมูล</span></div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-              <div><label class="block text-xs text-gray-500 mb-1">จากวันที่</label><input type="date" value="${f.dateFrom}" onchange="updateHrOffFilter('dateFrom', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">ถึงวันที่</label><input type="date" value="${f.dateTo}" onchange="updateHrOffFilter('dateTo', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">ชื่อ-สกุล</label><input type="text" value="${f.name}" onchange="updateHrOffFilter('name', this.value)" placeholder="พิมพ์ชื่อ..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">สาขา</label><input type="text" value="${f.branch}" onchange="updateHrOffFilter('branch', this.value)" placeholder="ค้นหาสาขา..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div><label class="block text-xs text-gray-500 mb-1">ตำแหน่ง</label><input type="text" value="${f.position}" onchange="updateHrOffFilter('position', this.value)" placeholder="ค้นหาตำแหน่ง..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
-              <div>
-                <label class="block text-xs text-gray-500 mb-1">เรียงลำดับวันที่</label>
-                <select onchange="updateHrOffFilter('sortDate', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500">
-                  <option value="desc" ${f.sortDate === 'desc' ? 'selected' : ''}>ล่าสุดไปเก่าสุด</option>
-                  <option value="asc" ${f.sortDate === 'asc' ? 'selected' : ''}>เก่าสุดไปล่าสุด</option>
-                </select>
-              </div>
+            <div class="flex items-center justify-between cursor-pointer" onclick="toggleHrOffFilter()">
+              <div class="flex items-center space-x-2 text-gray-700 font-medium">${ICONS.Search}<span>ตัวกรองข้อมูล</span></div>
+              <div class="text-gray-400 transform transition-transform ${showF ? 'rotate-180' : ''}">${ICONS.ChevronDown}</div>
             </div>
-            <div class="mt-4 flex justify-end"><button onclick="clearHrOffFilter()" class="text-sm text-gray-600 hover:text-indigo-600 font-medium px-4 py-2 w-full sm:w-auto bg-gray-100 sm:bg-transparent rounded">ล้างตัวกรอง</button></div>
+            <div class="${showF ? 'block' : 'hidden'} mt-4 pt-4 border-t border-gray-100">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                <div><label class="block text-xs text-gray-500 mb-1">จากวันที่</label><input type="date" value="${f.dateFrom}" onchange="updateHrOffFilter('dateFrom', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">ถึงวันที่</label><input type="date" value="${f.dateTo}" onchange="updateHrOffFilter('dateTo', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">ชื่อ-สกุล</label><input type="text" value="${f.name}" onchange="updateHrOffFilter('name', this.value)" placeholder="พิมพ์ชื่อ..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">สาขา</label><input type="text" value="${f.branch}" onchange="updateHrOffFilter('branch', this.value)" placeholder="ค้นหาสาขา..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">ตำแหน่ง</label><input type="text" value="${f.position}" onchange="updateHrOffFilter('position', this.value)" placeholder="ค้นหาตำแหน่ง..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500"></div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">เรียงลำดับวันที่</label>
+                  <select onchange="updateHrOffFilter('sortDate', this.value)" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-indigo-500">
+                    <option value="desc" ${f.sortDate === 'desc' ? 'selected' : ''}>ล่าสุดไปเก่าสุด</option>
+                    <option value="asc" ${f.sortDate === 'asc' ? 'selected' : ''}>เก่าสุดไปล่าสุด</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mt-4 flex justify-end"><button onclick="clearHrOffFilter()" class="text-sm text-gray-600 hover:text-indigo-600 font-medium px-4 py-2 w-full sm:w-auto bg-gray-100 sm:bg-transparent rounded">ล้างตัวกรอง</button></div>
+            </div>
           </div>
           
           <div class="flex-1 min-h-0 m-4 sm:m-6 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
@@ -798,6 +1132,7 @@
 
     window.updateHrOffFilter = (key, val) => { STATE.hrOffline.filters[key] = val; renderCurrentView(); };
     window.clearHrOffFilter = () => { STATE.hrOffline.filters = {dateFrom:'', dateTo:'', name:'', branch:'', position:'', sortDate:'desc'}; renderCurrentView(); };
+    window.toggleHrOffFilter = () => { STATE.hrOffline.showFilters = !STATE.hrOffline.showFilters; renderCurrentView(); };
 
     // --- Edit Candidate Modal (HR Offline) ---
     window.openEditHrOffCandidate = (id) => {
@@ -1088,6 +1423,151 @@
         } catch(err){}
       }
     };
+
+    // --- Leaderboard View (กระดานผู้นำ) ---
+    function renderLeaderboard(container) {
+      const fMonth = STATE.leaderboard.month; // "YYYY-MM"
+      
+      const stats = {};
+      STATE.candidates.forEach(c => {
+         const rCode = c.referrerCode;
+         if(!rCode || rCode === '-') return;
+         
+         if(!stats[rCode]) {
+            const u = STATE.users.find(x => String(x.empCode).toUpperCase() === String(rCode).toUpperCase());
+            stats[rCode] = { name: u ? u.name : 'พนักงาน', code: rCode, count: 0, commission: 0 };
+         }
+
+         // 1. นับยอดแนะนำ (ดูจากประทับเวลาว่าอยู่ในเดือนที่เลือกหรือไม่)
+         let cMonth = '';
+         const datePart = (c.timestamp || '').split(' ')[0];
+         if (datePart.includes('-')) {
+             cMonth = datePart.substring(0,7); // YYYY-MM
+         } else if (datePart.includes('/')) {
+             const p = datePart.split('/'); // DD/MM/YYYY
+             if (p.length === 3) cMonth = `${p[2]}-${p[1].padStart(2, '0')}`;
+         }
+         
+         if (cMonth === fMonth) {
+             stats[rCode].count += 1;
+         }
+
+         // 2. นับยอดคอมมิชชั่น (ดูจากประวัติการทำจ่ายที่จ่ายในเดือนที่เลือก)
+         if (Array.isArray(c.paymentHistory)) {
+             c.paymentHistory.forEach(ph => {
+                 let pMonth = '';
+                 if (ph.date && ph.date.includes('-')) {
+                     pMonth = ph.date.substring(0,7);
+                 }
+                 if (pMonth === fMonth) {
+                     stats[rCode].commission += Number(ph.amount) || 0;
+                 }
+             });
+         }
+      });
+      
+      const arr = Object.values(stats);
+      const topRef = [...arr].sort((a,b) => b.count - a.count).filter(x => x.count > 0).slice(0, 10);
+      const topEarn = [...arr].sort((a,b) => b.commission - a.commission).filter(x => x.commission > 0).slice(0, 10);
+
+      const renderItem = (item, index, type) => {
+          let rankClass = "text-gray-500 font-bold";
+          let bgClass = "";
+          let badge = "";
+          
+          if (index === 0) { rankClass = "text-yellow-600 text-xl font-extrabold"; bgClass = "bg-yellow-50/60 border-l-4 border-yellow-400"; badge = "🥇"; } 
+          else if (index === 1) { rankClass = "text-gray-400 text-lg font-bold"; bgClass = "bg-gray-50 border-l-4 border-gray-300"; badge = "🥈"; } 
+          else if (index === 2) { rankClass = "text-amber-700 text-lg font-bold"; bgClass = "bg-orange-50/40 border-l-4 border-orange-300"; badge = "🥉"; } 
+          else { rankClass = "text-gray-400 font-medium"; badge = `${index + 1}`; bgClass = "border-l-4 border-transparent"; }
+
+          const valStr = type === 'count' ? `${item.count} คน` : `฿${item.commission.toLocaleString()}`;
+          const valColor = type === 'count' ? 'text-indigo-600' : 'text-green-600';
+
+          return `
+          <li class="flex items-center justify-between p-4 hover:bg-gray-100 transition-colors ${bgClass}">
+              <div class="flex items-center gap-4">
+                  <div class="w-8 text-center ${rankClass}">${badge}</div>
+                  <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">${item.name.charAt(0)}</div>
+                      <div>
+                          <p class="font-bold text-gray-800 text-sm sm:text-base">${item.name}</p>
+                          <p class="text-xs text-gray-500">รหัส: ${item.code}</p>
+                      </div>
+                  </div>
+              </div>
+              <div class="font-bold ${valColor} text-lg">
+                  ${valStr}
+              </div>
+          </li>
+          `;
+      };
+
+      const topRefHTML = topRef.length > 0 ? topRef.map((item, i) => renderItem(item, i, 'count')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการแนะนำในเดือนนี้</li>';
+      const topEarnHTML = topEarn.length > 0 ? topEarn.map((item, i) => renderItem(item, i, 'comm')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการจ่ายค่าคอมมิชชั่นในเดือนนี้</li>';
+
+      container.innerHTML = `
+        <div class="p-4 sm:p-6 max-w-5xl mx-auto h-full overflow-auto pb-20">
+           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+              <div>
+                 <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">${ICONS.Trophy} กระดานผู้นำ (Leaderboard)</h2>
+                 <p class="text-sm text-gray-500">จัดอันดับยอดแนะนำและรายได้ประจำเดือน</p>
+              </div>
+              <div class="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-gray-200 w-full sm:w-auto">
+                 <label class="text-sm font-medium text-gray-600 pl-2">เลือกเดือน:</label>
+                 <input type="month" value="${fMonth}" onchange="updateLeaderboardMonth(this.value)" class="border-none bg-gray-50 p-2 rounded text-sm font-bold text-indigo-700 focus:ring-0 cursor-pointer flex-1">
+              </div>
+           </div>
+
+           <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2 shadow-sm">
+             <span>💡 <strong>Tip:</strong> หากต้องการดูข้อมูลทดสอบที่มีในระบบ ลองเปลี่ยนเดือนเป็น <strong>ตุลาคม หรือ พฤศจิกายน 2023</strong> ดูนะครับ</span>
+           </div>
+
+           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Top Referrers -->
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                 <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white flex justify-between items-center shadow-inner">
+                    <div class="flex items-center gap-3">
+                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.Users}</div>
+                       <div>
+                         <h3 class="font-bold text-lg leading-tight">นักแนะนำยอดเยี่ยม</h3>
+                         <p class="text-xs text-blue-100">เรียงตามจำนวนคนที่แนะนำมาได้</p>
+                       </div>
+                    </div>
+                 </div>
+                 <div class="p-0 flex-1 bg-gray-50/30">
+                    <ul class="divide-y divide-gray-100">
+                       ${topRefHTML}
+                    </ul>
+                 </div>
+              </div>
+
+              <!-- Top Earners -->
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                 <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-white flex justify-between items-center shadow-inner">
+                    <div class="flex items-center gap-3">
+                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.DollarSign}</div>
+                       <div>
+                         <h3 class="font-bold text-lg leading-tight">เศรษฐีประจำเดือน</h3>
+                         <p class="text-xs text-orange-100">เรียงตามยอดค่าคอมมิชชั่นที่ได้รับแล้ว</p>
+                       </div>
+                    </div>
+                 </div>
+                 <div class="p-0 flex-1 bg-gray-50/30">
+                    <ul class="divide-y divide-gray-100">
+                       ${topEarnHTML}
+                    </ul>
+                 </div>
+              </div>
+           </div>
+        </div>
+      `;
+    }
+
+    window.updateLeaderboardMonth = (val) => {
+        STATE.leaderboard.month = val;
+        renderCurrentView();
+    };
+
 
     // --- Commission View ---
     function renderCommission(container) {
