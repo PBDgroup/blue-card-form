@@ -97,14 +97,13 @@
 
         // --- Firebase Configuration ---
         const firebaseConfig = {
-          apiKey: "AIzaSyCMvIuTUQf5FBmWCIZTV4T8erEP3s2QJVU",
-          authDomain: "meowmeow-edc95.firebaseapp.com",
-          projectId: "meowmeow-edc95",
-          storageBucket: "meowmeow-edc95.firebasestorage.app",
-          messagingSenderId: "153036998012",
-          appId: "1:153036998012:web:cd588812d46545d45b90f9",
-          measurementId: "G-SJ75GY2W0R"
-        };
+  apiKey: "AIzaSyAO2cnkgLl1DLctrT1ATGwjV43-ZubOjY0",
+  authDomain: "meowmeow-10dd7.firebaseapp.com",
+  projectId: "meowmeow-10dd7",
+  storageBucket: "meowmeow-10dd7.firebasestorage.app",
+  messagingSenderId: "314305358070",
+  appId: "1:314305358070:web:e4a1d60f75701a4a5d24d7"
+};
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -358,6 +357,7 @@
           const [pinInput, setPinInput] = useState('');
           const [loading, setLoading] = useState(true);
           const [companyName, setCompanyName] = useState('ระบบเบิกจ่ายเงิน (รุ่นน้องแมว)');
+          const [lineAddUrl, setLineAddUrl] = useState('https://lin.ee/u8f2LgN');
           
           // ข้อมูลสำหรับสร้าง Admin คนแรก
           const [setupName, setSetupName] = useState('');
@@ -367,7 +367,10 @@
             const fetchSettings = async () => {
                try {
                   const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'));
-                  if (snap.exists() && snap.data().companyName) setCompanyName(snap.data().companyName);
+                  if (snap.exists()) {
+                      if (snap.data().companyName) setCompanyName(snap.data().companyName);
+                      if (snap.data().lineAddFriendUrl) setLineAddUrl(snap.data().lineAddFriendUrl);
+                  }
                } catch (e) {}
             };
             fetchSettings();
@@ -455,7 +458,15 @@
                     </div>
                   )}
                   
-                  <div className="mt-8 text-center border-t border-pink-100 pt-4">
+                  {lineAddUrl && !loading && users.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-pink-100">
+                      <a href={lineAddUrl} target="_blank" rel="noreferrer" className="w-full bg-[#00B900] text-white py-3.5 rounded-2xl font-bold hover:bg-[#009900] shadow-lg shadow-green-500/30 transition-all flex justify-center items-center gap-2 active:scale-95">
+                        <i className="fa-brands fa-line text-2xl"></i> เพิ่มเพื่อน LINE เพื่อรับแจ้งเตือน
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="mt-6 text-center border-t border-pink-100 pt-4">
                     <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="text-xs font-medium text-pink-400 hover:text-pink-600 underline flex items-center justify-center gap-1 mx-auto transition-all active:scale-95"><RefreshCw size={12}/> ล้างข้อมูลเก่า / แก้ปัญหาเข้าสู่ระบบไม่ได้</button>
                   </div>
                 </div>
@@ -1317,7 +1328,7 @@
 
         const SettingsView = ({ user }) => {
           const { showAlert } = useContext(UIContext);
-          const [settings, setSettings] = useState({ lineToken: '', scriptUrl: '', imgbbApiKey: '', companyName: '' });
+          const [settings, setSettings] = useState({ lineToken: '', scriptUrl: '', imgbbApiKey: '', companyName: '', lineAddFriendUrl: 'https://lin.ee/u8f2LgN' });
           const [testLineId, setTestLineId] = useState('');
           const [loading, setLoading] = useState(false);
           const [isTesting, setIsTesting] = useState(false);
@@ -1332,7 +1343,8 @@
                       lineToken: docSnap.data().lineToken || '', 
                       scriptUrl: docSnap.data().scriptUrl || '',
                       imgbbApiKey: docSnap.data().imgbbApiKey || '',
-                      companyName: docSnap.data().companyName || ''
+                      companyName: docSnap.data().companyName || '',
+                      lineAddFriendUrl: docSnap.data().lineAddFriendUrl || 'https://lin.ee/u8f2LgN'
                     });
                 }
               } catch (err) { console.error("Error loading settings:", err); }
@@ -1353,6 +1365,7 @@
                 scriptUrl: settings.scriptUrl.trim(), 
                 imgbbApiKey: settings.imgbbApiKey.trim(),
                 companyName: settings.companyName.trim(),
+                lineAddFriendUrl: settings.lineAddFriendUrl.trim(),
                 updatedAt: serverTimestamp()
               }, { merge: true });
               showAlert("บันทึกการตั้งค่าสำเร็จ!", 'success');
@@ -1396,6 +1409,10 @@
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-500 ml-1">ชื่อบริษัท / องค์กร (แสดงในหน้า Login และ Report)</label>
                     <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-medium text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.companyName} onChange={e => setSettings({...settings, companyName: e.target.value})} placeholder="เช่น บริษัท แมวเหมียว จำกัด" />
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <label className="text-xs font-black text-slate-500 ml-1">ลิงก์เพิ่มเพื่อน LINE (แสดงที่หน้าล็อกอิน ให้พนักงานกดแอด)</label>
+                    <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-medium text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.lineAddFriendUrl} onChange={e => setSettings({...settings, lineAddFriendUrl: e.target.value})} placeholder="เช่น https://line.me/R/ti/p/@yourbotid" />
                   </div>
                 </div>
 
