@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ระบบเบิกจ่ายเงินองค์กร (MeowExpense)</title>
+    <title>ระบบเบิกจ่ายเงินพีบีดีกรุ๊ป (MeowExpense)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,6 +13,7 @@
     <script src="https://unpkg.com/react-is/umd/react-is.production.min.js"></script>
     <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         .paw-bg {
@@ -30,13 +31,15 @@
             .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         }
         .mobile-bottom-nav { box-shadow: 0 -4px 20px -5px rgba(0,0,0,0.08); }
+        
+        /* Sidebar transition */
+        .sidebar-transition { transition: width 0.3s ease-in-out; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        // --- ESM Imports for Firebase v9 ---
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
         import { 
           getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged
@@ -46,16 +49,12 @@
           serverTimestamp, setDoc, getDoc, runTransaction
         } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
 
-        // --- React Hooks ---
         const { useState, useEffect, useMemo, createContext, useContext } = React;
-        
-        // --- Recharts ---
         const { 
           PieChart, Pie, Cell, Tooltip: RechartsTooltip, ResponsiveContainer, 
           BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend 
         } = window.Recharts;
 
-        // --- Mocking Lucide Icons using FontAwesome ---
         const Icon = ({ name, className = '', size = 16 }) => (
             <i className={`fas ${name} ${className} flex items-center justify-center`} style={{ fontSize: size, width: size, height: size }}></i>
         );
@@ -82,6 +81,8 @@
         const AlertCircle = (p) => <Icon name="fa-circle-exclamation" {...p} />;
         const ChevronDown = (p) => <Icon name="fa-chevron-down" {...p} />;
         const ChevronUp = (p) => <Icon name="fa-chevron-up" {...p} />;
+        const ChevronLeft = (p) => <Icon name="fa-chevron-left" {...p} />;
+        const ChevronRight = (p) => <Icon name="fa-chevron-right" {...p} />;
         const List = (p) => <Icon name="fa-list-ul" {...p} />;
         const CreditCard = (p) => <Icon name="fa-credit-card" {...p} />;
         const Banknote = (p) => <Icon name="fa-money-bill-wave" {...p} />;
@@ -95,39 +96,42 @@
         const PawPrint = (p) => <Icon name="fa-paw" {...p} />;
         const Cat = (p) => <Icon name="fa-cat" {...p} />;
 
-        // --- Firebase Configuration ---
-        const firebaseConfig = {
-  apiKey: "AIzaSyAO2cnkgLl1DLctrT1ATGwjV43-ZubOjY0",
-  authDomain: "meowmeow-10dd7.firebaseapp.com",
-  projectId: "meowmeow-10dd7",
-  storageBucket: "meowmeow-10dd7.firebasestorage.app",
-  messagingSenderId: "314305358070",
-  appId: "1:314305358070:web:e4a1d60f75701a4a5d24d7"
-};
+        let firebaseConfig = {
+            apiKey: "AIzaSyAO2cnkgLl1DLctrT1ATGwjV43-ZubOjY0",
+            authDomain: "meowmeow-10dd7.firebaseapp.com",
+            projectId: "meowmeow-10dd7",
+            storageBucket: "meowmeow-10dd7.firebasestorage.app",
+            messagingSenderId: "314305358070",
+            appId: "1:314305358070:web:e4a1d60f75701a4a5d24d7"
+        };
+        if (typeof window.__firebase_config !== 'undefined') {
+            try { firebaseConfig = JSON.parse(window.__firebase_config); } catch (e) {}
+        }
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
 
-        // --- Constants & Utilities ---
         const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#ff7300', '#009688', '#9c27b0'];
 
         const EXPENSE_CATEGORIES = [
-          { id: 'fixed', name: 'ค่าใช้จ่ายคงที่' },
-          { id: 'variable', name: 'ค่าใช้จ่ายผันแปร' }, 
-          { id: 'daily', name: 'ค่าใช้จ่ายรายวัน' },
-          { id: 'monthly', name: 'ค่าใช้จ่ายรายเดือน' },
-          { id: 'travel', name: 'ค่าเดินทาง' },
-          { id: 'accommodation', name: 'ค่าที่พัก' },
-          { id: 'evcharger', name: 'ค่าชาร์จรถไฟฟ้า' },
-          { id: 'oil', name: 'ค่าน้ำมัน' },
-          { id: 'sender', name: 'ค่าส่งของ' },
-          { id: 'equipmentcost', name: 'ค่าอุปกรณ์' },
-          { id: 'other', name: 'อื่นๆ' },
-            
+          { id: 'fixed_car', name: 'ค่าผ่อนงวดรถ', group: 'ค่าใช้จ่ายคงที่' },
+          { id: 'fixed_rent', name: 'ค่าเช่าบ้าน', group: 'ค่าใช้จ่ายคงที่' },
+          { id: 'fixed_sso', name: 'ค่าประกันสังคม', group: 'ค่าใช้จ่ายคงที่' },
+          { id: 'fixed_other', name: 'อื่นๆ', group: 'ค่าใช้จ่ายคงที่' },
+          { id: 'var_fuel', name: 'ค่าน้ำมัน/ค่าชาร์จ', group: 'ค่าใช้จ่ายผันแปร' },
+          { id: 'var_util', name: 'ค่าไฟ/ค่าน้ำ', group: 'ค่าใช้จ่ายผันแปร' },
+          { id: 'var_comm', name: 'ค่าเน็ต/โทรศัพท์', group: 'ค่าใช้จ่ายผันแปร' },
+          { id: 'var_parts', name: 'ค่าอะไหล่', group: 'ค่าใช้จ่ายผันแปร' },
+          { id: 'var_transport', name: 'ค่าขนส่ง', group: 'ค่าใช้จ่ายผันแปร' },
+          { id: 'var_travel', name: 'ค่าเดินทาง', group: 'ค่าใช้จ่ายผันแปร' },
+          { id: 'var_install', name: 'ค่าอุปกรณ์ติดตั้ง', group: 'ค่าใช้จ่ายผันแปร' },
+          { id: 'var_other', name: 'อื่นๆ', group: 'ค่าใช้จ่ายผันแปร' }
         ];
 
         const BANKS = [
+          { id: 'promptpay', name: 'พร้อมเพย์ (PromptPay)' },
           { id: 'kbank', name: 'ธ.กสิกรไทย (KBANK)' },
           { id: 'scb', name: 'ธ.ไทยพาณิชย์ (SCB)' },
           { id: 'ktb', name: 'ธ.กรุงไทย (KTB)' },
@@ -148,7 +152,6 @@
           REJECTED: { label: 'ไม่อนุมัติ', color: 'bg-red-100 text-red-800', lineText: 'ถูกปฏิเสธ' }
         };
 
-        // --- UI Context for Custom Alerts ---
         const UIContext = createContext();
 
         const UIProvider = ({ children }) => {
@@ -168,7 +171,7 @@
                       {alertData.type === 'error' ? <AlertCircle size={28} /> : <CheckCircle size={28} />}
                       <h3 className="font-bold text-xl">{alertData.type === 'error' ? 'ข้อผิดพลาด' : 'แจ้งเตือน'}</h3>
                     </div>
-                    <p className="text-gray-700 mb-6 font-medium">{alertData.msg}</p>
+                    <p className="text-gray-700 mb-6 font-medium whitespace-pre-line">{alertData.msg}</p>
                     <button onClick={() => setAlertData(null)} className="w-full bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 font-bold py-3 rounded-xl transition-all">ตกลง</button>
                   </div>
                 </div>
@@ -180,7 +183,7 @@
                       <AlertCircle size={28} />
                       <h3 className="font-bold text-xl">ยืนยันการดำเนินการ</h3>
                     </div>
-                    <p className="text-gray-700 mb-6 font-medium">{confirmData.msg}</p>
+                    <p className="text-gray-700 mb-6 font-medium whitespace-pre-line">{confirmData.msg}</p>
                     <div className="flex gap-3">
                       <button onClick={() => setConfirmData(null)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-xl transition-all">ยกเลิก</button>
                       <button onClick={() => { confirmData.onConfirm(); setConfirmData(null); }} className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all shadow-md">ยืนยัน</button>
@@ -192,7 +195,6 @@
           );
         };
 
-        // --- Helper: Line Notification System ---
         const uploadImageToImgbb = async (base64String, apiKey) => {
           if (!apiKey) throw new Error("ไม่พบ Imgbb API Key");
           const base64Data = base64String.includes(',') ? base64String.split(',')[1] : base64String;
@@ -352,8 +354,6 @@
           return flexMessage;
         };
 
-        // --- Components ---
-
         const AuthScreen = ({ onLogin }) => {
           const { showAlert } = useContext(UIContext);
           const [users, setUsers] = useState([]);
@@ -363,9 +363,23 @@
           const [companyName, setCompanyName] = useState('ระบบเบิกจ่ายเงิน (รุ่นน้องแมว)');
           const [lineAddUrl, setLineAddUrl] = useState('https://lin.ee/u8f2LgN');
           
-          // ข้อมูลสำหรับสร้าง Admin คนแรก
           const [setupName, setSetupName] = useState('');
           const [setupPin, setSetupPin] = useState('');
+
+          useEffect(() => {
+            const handleKeyDown = (e) => {
+              if (document.activeElement.tagName === 'INPUT') return;
+              if (users.length === 0 || loading) return;
+
+              if (/^[0-9]$/.test(e.key)) {
+                setPinInput(prev => (prev.length < 4 ? prev + e.key : prev));
+              } else if (e.key === 'Backspace') {
+                setPinInput(prev => prev.slice(0, -1));
+              }
+            };
+            window.addEventListener('keydown', handleKeyDown);
+            return () => window.removeEventListener('keydown', handleKeyDown);
+          }, [users.length, loading]);
 
           useEffect(() => {
             const fetchSettings = async () => {
@@ -412,7 +426,6 @@
           const handleSetupAdmin = () => {
             if (!setupName) return showAlert('กรุณาระบุชื่อแอดมิน');
             if (setupPin.length !== 4) return showAlert('กรุณาตั้งรหัส PIN 4 หลัก');
-            // สร้างบัญชีแรกให้เป็น Admin เสมอ
             onLogin({ name: setupName, role: ROLES.ADMIN, branchId: 'HEADQUARTER', pin: setupPin });
           };
 
@@ -500,36 +513,67 @@
                 end.setHours(23, 59, 59, 999); 
                 if (expenseDate < start || expenseDate > end) matches = false;
               }
-              if (filterBranch !== 'ALL' && e.branchId !== filterBranch) matches = false;
+              if (filterBranch !== 'ALL') {
+                  const hasMatchingItem = e.items && Array.isArray(e.items) && e.items.some(i => (i.branchId || e.branchId) === filterBranch);
+                  const isMainBranchMatch = e.branchId === filterBranch;
+                  if (!hasMatchingItem && !isMainBranchMatch) matches = false;
+              }
               return matches;
             });
           }, [expenses, dateRange, filterBranch]);
 
-          const pendingAmount = filteredExpenses.filter(e => e.status === 'pending').reduce((sum, e) => sum + parseFloat(e.amount), 0);
-          const waitingTransferAmount = filteredExpenses.filter(e => e.status === 'waiting_transfer').reduce((sum, e) => sum + parseFloat(e.amount), 0);
-          const transferredAmount = filteredExpenses.filter(e => e.status === 'transferred' || e.status === 'approved').reduce((sum, e) => sum + parseFloat(e.amount), 0);
-          const totalAmount = filteredExpenses.reduce((sum, e) => e.status !== 'rejected' ? sum + parseFloat(e.amount) : sum, 0);
+          const calculateSum = (statusList) => {
+              return filteredExpenses.reduce((sum, e) => {
+                  if (statusList.includes(e.status)) {
+                      if (filterBranch !== 'ALL' && e.items && Array.isArray(e.items)) {
+                          return sum + e.items.reduce((itemSum, item) => (item.branchId || e.branchId) === filterBranch ? itemSum + parseFloat(item.amount) : itemSum, 0);
+                      }
+                      return sum + parseFloat(e.amount);
+                  }
+                  return sum;
+              }, 0);
+          };
+
+          const pendingAmount = calculateSum(['pending']);
+          const waitingTransferAmount = calculateSum(['waiting_transfer']);
+          const transferredAmount = calculateSum(['transferred', 'approved']);
+          const totalAmount = calculateSum(['pending', 'waiting_transfer', 'transferred', 'approved']);
 
           const categoryData = useMemo(() => {
             const data = {};
             filteredExpenses.filter(e => e.status !== 'rejected').forEach(e => {
               if (e.items && Array.isArray(e.items)) {
-                e.items.forEach(item => { data[item.category] = (data[item.category] || 0) + parseFloat(item.amount); });
+                e.items.forEach(item => { 
+                    const itemBranch = item.branchId || e.branchId;
+                    if (filterBranch === 'ALL' || itemBranch === filterBranch) {
+                        data[item.category] = (data[item.category] || 0) + parseFloat(item.amount); 
+                    }
+                });
               } else {
-                data[e.category] = (data[e.category] || 0) + parseFloat(e.amount);
+                if (filterBranch === 'ALL' || e.branchId === filterBranch) {
+                    data[e.category] = (data[e.category] || 0) + parseFloat(e.amount);
+                }
               }
             });
             return Object.keys(data).map(key => ({
               name: EXPENSE_CATEGORIES.find(c => c.id === key)?.name || key,
               value: data[key]
             })).sort((a,b) => b.value - a.value).filter(d => d.value > 0);
-          }, [filteredExpenses]);
+          }, [filteredExpenses, filterBranch]);
 
           const branchData = useMemo(() => {
             const data = {};
             filteredExpenses.filter(e => e.status !== 'rejected').forEach(e => {
+              if (e.items && Array.isArray(e.items)) {
+                e.items.forEach(item => {
+                    const itemBranch = item.branchId || e.branchId;
+                    const branchName = itemBranch === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === itemBranch)?.name || 'ไม่ระบุ');
+                    data[branchName] = (data[branchName] || 0) + parseFloat(item.amount);
+                });
+              } else {
                 const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || 'ไม่ระบุ');
                 data[branchName] = (data[branchName] || 0) + parseFloat(e.amount);
+              }
             });
             return Object.keys(data).map(key => ({ name: key, value: data[key] })).sort((a,b) => b.value - a.value).filter(d => d.value > 0);
           }, [filteredExpenses, branches]);
@@ -705,14 +749,27 @@
         const RequestForm = ({ user, setView, branches, expenses }) => {
           const { showAlert } = useContext(UIContext);
           const [items, setItems] = useState([]);
-          const [currentItem, setCurrentItem] = useState({ amount: '', category: 'daily', description: '', date: new Date().toISOString().split('T')[0], receipt: null });
-          const [bankInfo, setBankInfo] = useState({ bank: 'kbank', accountName: user.name || '', accountNumber: '' });
+          const [selectedGroup, setSelectedGroup] = useState('ค่าใช้จ่ายคงที่');
+          const [currentItem, setCurrentItem] = useState({ amount: '', category: 'fixed_car', description: '', date: new Date().toISOString().split('T')[0], receipt: null, branchId: user.branchId || 'HEADQUARTER', aHash: '', uniqueDigits: [], uniqueThai: [] });
+          const [bankInfo, setBankInfo] = useState({ bank: 'promptpay', accountName: user.name || '', accountNumber: '' });
           const [loading, setLoading] = useState(false);
+          const [isAnalyzing, setIsAnalyzing] = useState(false);
           const [approvers, setApprovers] = useState([]);
           const [selectedApproverId, setSelectedApproverId] = useState('');
+          const [viewImage, setViewImage] = useState(null);
 
           const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
           const isAutoApprove = user.role === ROLES.MANAGER;
+          
+          const isFormValid = useMemo(() => {
+              const hasBasicInfo = currentItem.date && currentItem.category && currentItem.description.trim() !== '' && currentItem.amount;
+              const requireReceipt = user.role === ROLES.EMPLOYEE;
+              
+              if (requireReceipt) {
+                  return hasBasicInfo && currentItem.receipt !== null && !isAnalyzing;
+              }
+              return hasBasicInfo && !isAnalyzing;
+          }, [currentItem, user.role, isAnalyzing]);
 
           useEffect(() => {
             const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
@@ -739,6 +796,53 @@
             return false;
           };
 
+          // สร้าง aHash แบบเข้มข้น ดึงเฉพาะตารางตรงกลางภาพ 70% 
+          const generateAHash = async (base64) => {
+              return new Promise((resolve) => {
+                  const img = new Image();
+                  img.onload = () => {
+                      const canvas = document.createElement('canvas');
+                      const size = 12; // 144 bits 
+                      canvas.width = size;
+                      canvas.height = size;
+                      const ctx = canvas.getContext('2d');
+                      
+                      const cropW = img.width * 0.7;
+                      const cropH = img.height * 0.7;
+                      const sx = img.width * 0.15;
+                      const sy = img.height * 0.15;
+
+                      ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, size, size);
+                      const imageData = ctx.getImageData(0, 0, size, size).data;
+                      
+                      let grays = [];
+                      let sum = 0;
+                      for (let i = 0; i < imageData.length; i += 4) {
+                          const gray = (imageData[i] * 0.299) + (imageData[i+1] * 0.587) + (imageData[i+2] * 0.114);
+                          grays.push(gray);
+                          sum += gray;
+                      }
+                      const avg = sum / grays.length;
+                      let hash = '';
+                      for (let i = 0; i < grays.length; i++) {
+                          hash += grays[i] >= avg ? '1' : '0';
+                      }
+                      resolve(hash);
+                  };
+                  img.onerror = () => resolve(null);
+                  img.src = base64;
+              });
+          };
+
+          const getHammingDistance = (h1, h2) => {
+              if (!h1 || !h2 || h1.length !== h2.length) return 999;
+              let dist = 0;
+              for(let i=0; i<h1.length; i++) {
+                  if(h1[i] !== h2[i]) dist++;
+              }
+              return dist;
+          };
+
           const handleFileChange = (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -748,14 +852,101 @@
                  return;
               }
               const reader = new FileReader();
-              reader.onloadend = () => {
+              reader.onloadend = async () => {
                  const base64Data = reader.result;
+                 
                  if (checkDuplicateReceipt(base64Data)) {
-                    showAlert("ข้อมูลนี้คุณได้เบิกไปแล้ว พบสลิปหรือหลักฐานการเบิกเงินซ้ำในระบบ", 'error');
+                    showAlert("รูปภาพนี้คุณได้เบิกไปแล้ว พบหลักฐานการเบิกเงินซ้ำในระบบ", 'error');
                     e.target.value = null;
                     return;
                  }
-                 setCurrentItem(prev => ({ ...prev, receipt: base64Data }));
+                 
+                 setIsAnalyzing(true);
+                 try {
+                     const aHash = await generateAHash(base64Data);
+                     const { data: { text } } = await window.Tesseract.recognize(base64Data, 'tha+eng');
+                     
+                     // ดึงชุดตัวเลขที่ความยาว 2 หลักขึ้นไป
+                     const digitsArray = text.match(/\d{2,}/g) || [];
+                     const uniqueDigits = [...new Set(digitsArray)];
+                     
+                     // ดึงคำภาษาไทยยาวๆ ที่ไม่ใช่คำทั่วไปในบิล
+                     const thaiWords = text.match(/[ก-๙]{4,}/g) || [];
+                     const common = ['ใบเสร็จ', 'ใบส่งสินค้า', 'รับเงิน', 'จำนวน', 'รวมเงิน', 'บาทถ้วน', 'วันที่', 'เดือน', 'พ.ศ.', 'ลูกค้า'];
+                     const uniqueThai = [...new Set(thaiWords.filter(w => !common.some(c => w.includes(c))))];
+                     
+                     let isDuplicate = false;
+                     let duplicateReason = "";
+
+                     const checkMatch = (item) => {
+                         // 1. โครงสร้างตารางลายเส้นคล้ายกัน
+                         if (item.aHash && aHash) {
+                             const dist = getHammingDistance(item.aHash, aHash);
+                             if (dist < 35) { // ห่างไม่เกิน 35 จาก 144 bits (~75% similarity)
+                                 duplicateReason = "ระบบ AI ตรวจพบโครงร่างตารางและลายเส้นที่ตรงกันกับบิลเดิม (ปฏิเสธบิลถ่ายใหม่หรือคาร์บอน)";
+                                 return true;
+                             }
+                         }
+                         
+                         // 2. มีชุดตัวเลข 2 หลักขึ้นไปตรงกัน 3 ชุดขึ้นไป (เช่น 16, 69, 2000)
+                         if (item.uniqueDigits && uniqueDigits.length > 0) {
+                             let matchCount = 0;
+                             for(const d of uniqueDigits) {
+                                 if (item.uniqueDigits.includes(d)) matchCount++;
+                             }
+                             if (matchCount >= 3) {
+                                 duplicateReason = "ระบบ AI ตรวจพบชุดตัวเลขสำคัญตรงกันอย่างผิดสังเกต 3 ชุดขึ้นไป (เช่น วันที่ และ ยอดเงิน)";
+                                 return true;
+                             }
+                         }
+                         
+                         // 3. มีคำเฉพาะที่เป็นลายมือตรงกัน 2 คำขึ้นไป
+                         if (item.uniqueThai && uniqueThai.length > 0) {
+                             let matchCount = 0;
+                             for(const w of uniqueThai) {
+                                 if (item.uniqueThai.some(old => old.includes(w) || w.includes(old))) matchCount++;
+                             }
+                             if (matchCount >= 2) {
+                                 duplicateReason = "ระบบ AI ตรวจพบลายมือหรือข้อความเฉพาะที่ตรงกันกับบิลในระบบ";
+                                 return true;
+                             }
+                         }
+                         
+                         return false;
+                     };
+
+                     for (const item of items) {
+                         if (checkMatch(item)) { isDuplicate = true; break; }
+                     }
+
+                     if (!isDuplicate) {
+                         for (const exp of expenses) {
+                             if (exp.status !== 'rejected' && exp.items) {
+                                 for (const item of exp.items) {
+                                     if (checkMatch(item)) { isDuplicate = true; break; }
+                                 }
+                             }
+                             if(isDuplicate) break;
+                         }
+                     }
+
+                     if (isDuplicate) {
+                         showAlert(`ไม่อนุญาตให้ใช้รูปนี้!\n\n${duplicateReason}`, 'error');
+                         document.getElementById('receipt-upload').value = '';
+                     } else {
+                         setCurrentItem(prev => ({ 
+                             ...prev, 
+                             receipt: base64Data, 
+                             aHash: aHash,
+                             uniqueDigits: uniqueDigits,
+                             uniqueThai: uniqueThai
+                         }));
+                     }
+                 } catch (err) {
+                     console.error("Analysis Error:", err);
+                     setCurrentItem(prev => ({ ...prev, receipt: base64Data }));
+                 }
+                 setIsAnalyzing(false);
               };
               reader.readAsDataURL(file);
             }
@@ -765,10 +956,11 @@
             e.preventDefault(); 
             if (!currentItem.amount || !currentItem.description.trim() || !currentItem.date) return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน');
             setItems([...items, { ...currentItem, id: Date.now() }]);
-            setCurrentItem(prev => ({ ...prev, amount: '', description: '', receipt: null }));
+            setCurrentItem(prev => ({ ...prev, amount: '', description: '', receipt: null, aHash: '', uniqueDigits: [], uniqueThai: [] }));
             const fileInput = document.getElementById('receipt-upload');
             if (fileInput) fileInput.value = '';
           };
+
           const handleRemoveItem = (id) => setItems(items.filter(item => item.id !== id));
           
           const generateExpenseId = async (branchId) => {
@@ -797,12 +989,12 @@
 
             setLoading(true);
             try {
-              const runNumber = await generateExpenseId(user.branchId);
+              const runNumber = await generateExpenseId(user.branchId || 'HEADQUARTER'); 
 
               const initialStatus = isAutoApprove ? 'waiting_transfer' : 'pending';
               const expenseData = {
                   runNumber, amount: totalAmount, description: `ใบเบิกค่าใช้จ่าย (${items.length} รายการ)`, items: items, 
-                  date: new Date(), status: initialStatus, userId: user.uid, userName: user.name, branchId: user.branchId, 
+                  date: new Date(), status: initialStatus, userId: user.uid, userName: user.name, branchId: user.branchId || 'HEADQUARTER', 
                   createdBy: user.uid, createdAt: serverTimestamp(), category: 'mixed', targetApproverId: isAutoApprove ? user.uid : selectedApproverId, 
                   bankDetails: { 
                     bankId: bankInfo.bank, bankName: BANKS.find(b => b.id === bankInfo.bank)?.name || bankInfo.bank, 
@@ -838,14 +1030,56 @@
             <div className="max-w-4xl mx-auto space-y-6">
                <div className="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-gray-100">
                   <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800"><PlusCircle className="text-blue-600" /> ขอเบิกค่าใช้จ่าย (สร้างใบเบิก)</h2>
+                  
                   <form onSubmit={handleAddItem}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="md:col-span-3"><label className="block text-xs font-medium text-gray-700 mb-1">วันที่ (รายการ) <span className="text-red-500">*</span></label><input type="date" required className="w-full p-2 border rounded-lg text-sm" value={currentItem.date} onChange={e => setCurrentItem({...currentItem, date: e.target.value})}/></div>
-                        <div className="md:col-span-3"><label className="block text-xs font-medium text-gray-700 mb-1">หมวดหมู่ <span className="text-red-500">*</span></label><select className="w-full p-2 border rounded-lg text-sm" required value={currentItem.category} onChange={e => setCurrentItem({...currentItem, category: e.target.value})}>{EXPENSE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-                        <div className="md:col-span-6"><label className="block text-xs font-medium text-gray-700 mb-1">รายละเอียด <span className="text-red-500">*</span></label><input type="text" required className="w-full p-2 border rounded-lg text-sm" placeholder="รายละเอียดค่าใช้จ่าย" value={currentItem.description} onChange={e => setCurrentItem({...currentItem, description: e.target.value})}/></div>
+                        <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">วันที่ <span className="text-red-500">*</span></label><input type="date" required className="w-full p-2 border rounded-lg text-sm" value={currentItem.date} onChange={e => setCurrentItem({...currentItem, date: e.target.value})}/></div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">หมวดหมู่ <span className="text-red-500">*</span></label>
+                            <select className="w-full p-2 border rounded-lg text-sm" required value={selectedGroup} onChange={e => {
+                                const newGroup = e.target.value;
+                                setSelectedGroup(newGroup);
+                                const firstItem = EXPENSE_CATEGORIES.find(c => c.group === newGroup);
+                                if(firstItem) setCurrentItem({...currentItem, category: firstItem.id});
+                            }}>
+                                <option value="ค่าใช้จ่ายคงที่">ค่าใช้จ่ายคงที่</option>
+                                <option value="ค่าใช้จ่ายผันแปร">ค่าใช้จ่ายผันแปร</option>
+                            </select>
+                        </div>
+                        <div className="md:col-span-3">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">รายการ <span className="text-red-500">*</span></label>
+                            <select className="w-full p-2 border rounded-lg text-sm" required value={currentItem.category} onChange={e => setCurrentItem({...currentItem, category: e.target.value})}>
+                                {EXPENSE_CATEGORIES.filter(c => c.group === selectedGroup).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN) && (
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-medium text-blue-700 mb-1">สาขา <span className="text-red-500">*</span></label>
+                                <select className="w-full p-2 border border-blue-200 bg-blue-50 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={currentItem.branchId} onChange={e => setCurrentItem({...currentItem, branchId: e.target.value})}>
+                                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                    <option value="HEADQUARTER">สำนักงานใหญ่</option>
+                                </select>
+                            </div>
+                        )}
+                        <div className={`md:col-span-${(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN) ? '3' : '5'}`}><label className="block text-xs font-medium text-gray-700 mb-1">รายละเอียด <span className="text-red-500">*</span></label><input type="text" required className="w-full p-2 border rounded-lg text-sm" placeholder="รายละเอียดค่าใช้จ่าย" value={currentItem.description} onChange={e => setCurrentItem({...currentItem, description: e.target.value})}/></div>
                         <div className="md:col-span-3"><label className="block text-xs font-medium text-gray-700 mb-1">จำนวนเงิน <span className="text-red-500">*</span></label><input type="number" required min="0.01" step="0.01" className="w-full p-2 border rounded-lg text-sm" placeholder="0.00" value={currentItem.amount} onChange={e => setCurrentItem({...currentItem, amount: e.target.value})}/></div>
-                        <div className="md:col-span-5"><label className="block text-xs font-medium text-gray-700 mb-1">แนบรูปใบเสร็จ</label><div className="flex items-center gap-2"><label className="cursor-pointer bg-gray-50 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2 text-sm w-full truncate"><Paperclip size={16}/><span className="truncate">{currentItem.receipt ? 'แนบรูปแล้ว' : 'เลือกรูปภาพ...'}</span><input id="receipt-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange}/></label>{currentItem.receipt && (<div className="relative group"><img src={currentItem.receipt} className="h-10 w-10 object-cover rounded border" alt="Preview"/><button type="button" onClick={() => { setCurrentItem({...currentItem, receipt: null}); document.getElementById('receipt-upload').value = ''; }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"><X size={12}/></button></div>)}</div></div>
-                        <div className="md:col-span-4"><button type="submit" className="w-full bg-pink-50 text-pink-600 px-4 py-2 rounded-xl font-semibold hover:bg-pink-100 transition flex items-center justify-center gap-2 border border-pink-200"><PawPrint size={18} /> เพิ่มลงรายการ</button></div>
+                        <div className="md:col-span-5">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">แนบรูปใบเสร็จ {user.role === ROLES.EMPLOYEE && <span className="text-red-500">*</span>}</label>
+                            <div className="flex items-center gap-2">
+                                <label className={`cursor-pointer bg-gray-50 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2 text-sm w-full truncate ${isAnalyzing ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    {isAnalyzing ? <RefreshCw className="animate-spin" size={16} /> : <Paperclip size={16}/>}
+                                    <span className="truncate">{isAnalyzing ? 'กำลังวิเคราะห์ภาพ (AI)...' : currentItem.receipt ? 'แนบรูปแล้ว' : 'เลือกรูปภาพ...'}</span>
+                                    <input id="receipt-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={isAnalyzing}/>
+                                </label>
+                                {currentItem.receipt && !isAnalyzing && (
+                                    <div className="relative group shrink-0">
+                                        <img src={currentItem.receipt} className="h-10 w-10 object-cover rounded border" alt="Preview"/>
+                                        <button type="button" onClick={() => { setCurrentItem({...currentItem, receipt: null, aHash: '', uniqueDigits: [], uniqueThai: []}); document.getElementById('receipt-upload').value = ''; }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"><X size={12}/></button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="md:col-span-4"><button type="submit" disabled={!isFormValid || isAnalyzing} className="w-full bg-pink-50 text-pink-600 px-4 py-2 rounded-xl font-semibold hover:bg-pink-100 transition flex items-center justify-center gap-2 border border-pink-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-400"><PawPrint size={18} /> เพิ่มลงรายการ</button></div>
                     </div>
                   </form>
                </div>
@@ -855,7 +1089,33 @@
                     <div className="p-4 bg-gray-50 border-b flex justify-between items-center"><h3 className="font-semibold text-gray-700">รายการในใบเบิก ({items.length})</h3><button onClick={() => setItems([])} className="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">ล้างทั้งหมด</button></div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[500px]">
-                            <tbody className="divide-y">{items.map((item, index) => (<tr key={item.id} className="group hover:bg-gray-50"><td className="p-4 text-sm text-gray-500 w-12">{index + 1}</td><td className="p-4 text-sm"><div className="font-medium text-gray-800">{item.description}</div><div className="text-xs text-gray-500">{item.date} • {EXPENSE_CATEGORIES.find(c => c.id === item.category)?.name}</div></td><td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(item.amount).toLocaleString()}</td><td className="p-4 text-right w-16"><button onClick={() => handleRemoveItem(item.id)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm border rounded-lg p-1.5 active:scale-95"><Trash2 size={16} /></button></td></tr>))}</tbody>
+                            <tbody className="divide-y">
+                                {items.map((item, index) => (
+                                    <tr key={item.id} className="group hover:bg-gray-50">
+                                        <td className="p-4 text-sm text-gray-500 w-12">{index + 1}</td>
+                                        <td className="p-4 text-sm">
+                                            <div className="font-medium text-gray-800">{item.description}</div>
+                                            <div className="text-xs text-gray-500">
+                                                {item.date} • {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} - ${cat.name}` : item.category; })()} 
+                                                {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN) && (<span className="ml-2 text-blue-600 font-semibold border border-blue-200 bg-blue-50 px-1 rounded">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id === item.branchId)?.name}</span>)}
+                                            </div>
+                                        </td>
+                                        <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(item.amount).toLocaleString()}</td>
+                                        <td className="p-4 text-right w-24">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {item.receipt && (
+                                                    <button onClick={(e) => { e.preventDefault(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 bg-white shadow-sm border rounded-lg p-1.5 active:scale-95" title="ดูรูปใบเสร็จ">
+                                                        <ImageIcon size={16} />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => handleRemoveItem(item.id)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm border rounded-lg p-1.5 active:scale-95" title="ลบรายการนี้">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
                             <tfoot className="bg-gray-50 border-t"><tr><td colSpan="2" className="p-4 text-right font-semibold text-gray-700">ยอดรวมทั้งใบ</td><td className="p-4 text-right font-bold text-blue-600 text-lg">฿{totalAmount.toLocaleString()}</td><td></td></tr></tfoot>
                         </table>
                     </div>
@@ -884,14 +1144,24 @@
                         </div>
                     )}
 
-                    <div className="p-4 bg-white border-t"><button onClick={handleSubmitAll} disabled={loading} className="w-full bg-pink-500 text-white py-3 rounded-2xl font-bold hover:bg-pink-600 shadow-md shadow-pink-500/30 disabled:opacity-50 flex items-center justify-center gap-2">{loading ? 'กำลังบันทึกข้อมูล...' : `ยืนยันการเบิกจ่าย (รวม ${totalAmount.toLocaleString()} บาท)`}</button></div>
+                    <div className="p-4 bg-white border-t"><button onClick={handleSubmitAll} disabled={loading} className="w-full bg-pink-50 text-white py-3 rounded-2xl font-bold hover:bg-pink-600 shadow-md shadow-pink-500/30 disabled:opacity-50 flex items-center justify-center gap-2">{loading ? 'กำลังบันทึกข้อมูล...' : `ยืนยันการเบิกจ่าย (รวม ${totalAmount.toLocaleString()} บาท)`}</button></div>
+                 </div>
+               )}
+
+               {/* Modal สำหรับแสดงรูปภาพที่ผู้ใช้กดดูจากตาราง */}
+               {viewImage && (
+                 <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setViewImage(null)}>
+                   <div className="bg-white p-2 rounded-lg max-w-3xl max-h-[90vh] overflow-auto relative" onClick={e => e.stopPropagation()}>
+                     <button type="button" onClick={() => setViewImage(null)} className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors shadow-sm z-10"><X size={20}/></button>
+                     <img src={viewImage} alt="Receipt Preview" className="max-w-full h-auto rounded" />
+                   </div>
                  </div>
                )}
             </div>
           );
         };
 
-        const HistoryView = ({ expenses, getBranchName, user }) => {
+        const HistoryView = ({ expenses, getBranchName, user, branches }) => {
           const [viewImage, setViewImage] = useState(null);
           const [expandedId, setExpandedId] = useState(null);
           return (
@@ -942,7 +1212,7 @@
                                       </div>
                                     )}
                                     <div className="bg-gray-100 px-4 py-2 border-b text-xs font-semibold text-gray-600 flex items-center gap-2"><List size={14}/> รายละเอียดรายการย่อย</div>
-                                    {e.items && Array.isArray(e.items) ? (<div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]"><thead><tr className="border-b text-gray-500 bg-gray-50"><th className="p-3 text-left w-10">#</th><th className="p-3 text-left">รายการ</th><th className="p-3 text-left">หมวดหมู่</th><th className="p-3 text-right">จำนวนเงิน</th><th className="p-3 text-center">หลักฐาน</th></tr></thead><tbody>{e.items.map((item, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-gray-50"><td className="p-3 text-gray-500">{idx+1}</td><td className="p-3"><div>{item.description}</div><div className="text-xs text-gray-400">{item.date}</div></td><td className="p-3 text-gray-500">{EXPENSE_CATEGORIES.find(c => c.id === item.category)?.name}</td><td className="p-3 text-right font-medium">฿{parseFloat(item.amount).toLocaleString()}</td><td className="p-3 text-center">{item.receipt ? (<button onClick={(ev) => { ev.stopPropagation(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 flex items-center justify-center gap-1 text-xs mx-auto"><ImageIcon size={14}/> ดูรูป</button>) : <span className="text-gray-300">-</span>}</td></tr>))}</tbody></table></div>) : (<div className="p-4 text-gray-500 text-center">ไม่มีรายละเอียดรายการย่อย</div>)}
+                                    {e.items && Array.isArray(e.items) ? (<div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]"><thead><tr className="border-b text-gray-500 bg-gray-50"><th className="p-3 text-left w-10">#</th><th className="p-3 text-left">รายการ</th><th className="p-3 text-left">กลุ่ม/รายการ/สาขา</th><th className="p-3 text-right">จำนวนเงิน</th><th className="p-3 text-center">หลักฐาน</th></tr></thead><tbody>{e.items.map((item, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-gray-50"><td className="p-3 text-gray-500">{idx+1}</td><td className="p-3"><div>{item.description}</div><div className="text-xs text-gray-400">{item.date}</div></td><td className="p-3 text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700 text-xs">{cat.group}</div><div>{cat.name}</div></> : <div>{item.category}</div>; })()}{(item.branchId && item.branchId !== e.branchId) && (<div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>)}</td><td className="p-3 text-right font-medium">฿{parseFloat(item.amount).toLocaleString()}</td><td className="p-3 text-center">{item.receipt ? (<button onClick={(ev) => { ev.stopPropagation(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 flex items-center justify-center gap-1 text-xs mx-auto"><ImageIcon size={14}/> ดูรูป</button>) : <span className="text-gray-300">-</span>}</td></tr>))}</tbody></table></div>) : (<div className="p-4 text-gray-500 text-center">ไม่มีรายละเอียดรายการย่อย</div>)}
                                  </div>
                               </td>
                             </tr>
@@ -953,12 +1223,12 @@
                   </table>
                 </div>
               </div>
-              {viewImage && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setViewImage(null)}><div className="bg-white p-2 rounded-lg max-w-3xl max-h-[90vh] overflow-auto relative"><button type="button" onClick={() => setViewImage(null)} className="absolute top-2 right-2 bg-gray-200 rounded-full p-1"><X size={20}/></button><img src={viewImage} alt="Receipt" className="max-w-full h-auto" /></div></div>)}
+              {viewImage && (<div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setViewImage(null)}><div className="bg-white p-2 rounded-lg max-w-3xl max-h-[90vh] overflow-auto relative"><button type="button" onClick={() => setViewImage(null)} className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors shadow-sm z-10"><X size={20}/></button><img src={viewImage} alt="Receipt" className="max-w-full h-auto rounded" /></div></div>)}
             </>
           );
         };
 
-        const ApprovalQueue = ({ expenses, user }) => {
+        const ApprovalQueue = ({ expenses, user, branches }) => {
           const { showAlert } = useContext(UIContext);
           const [viewImage, setViewImage] = useState(null);
           const [confirmAction, setConfirmAction] = useState({ id: null, type: null }); 
@@ -1072,7 +1342,7 @@
                            {e.bankDetails && (<div className="mb-4 p-3 bg-white rounded-lg border flex flex-col sm:flex-row items-start sm:items-center gap-3 text-sm"><Banknote className="text-green-600 shrink-0" size={20}/><div><div className="font-semibold text-gray-700">{e.bankDetails.bankName}</div><div className="text-gray-500">{e.bankDetails.accountNumber} • {e.bankDetails.accountName}</div></div></div>)}
                            
                            <div className="bg-white rounded-lg border mb-4">
-                                {e.items && Array.isArray(e.items) ? (e.items.map((item, idx) => (<div key={idx} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 border-b last:border-0 gap-2 sm:gap-0"><div className="text-sm text-gray-700">{item.description}</div><div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto"><span className="text-sm font-bold">฿{parseFloat(item.amount).toLocaleString()}</span>{item.receipt && (<button onClick={(ev) => {ev.stopPropagation(); setViewImage(item.receipt);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded border"><ImageIcon size={16}/></button>)}</div></div>))) : <div className="p-3 text-gray-500 text-sm">ไม่มีรายการย่อย</div>}
+                                {e.items && Array.isArray(e.items) ? (e.items.map((item, idx) => (<div key={idx} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 border-b last:border-0 gap-2 sm:gap-0"><div><div className="text-sm font-medium text-gray-800">{item.description}</div><div className="text-xs text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} • ${cat.name}` : item.category; })()}</div>{(item.branchId && item.branchId !== e.branchId) && <div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>}</div><div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto"><span className="text-sm font-bold">฿{parseFloat(item.amount).toLocaleString()}</span>{item.receipt && (<button onClick={(ev) => {ev.stopPropagation(); setViewImage(item.receipt);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded border"><ImageIcon size={16}/></button>)}</div></div>))) : <div className="p-3 text-gray-500 text-sm">ไม่มีรายการย่อย</div>}
                            </div>
 
                            <div className="flex gap-2 relative">
@@ -1081,7 +1351,10 @@
                                         <div className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2"><AlertCircle size={16} className={confirmAction.type === 'rejected' ? 'text-red-600' : 'text-green-600'}/> {confirmAction.type === 'waiting_transfer' ? 'ยืนยันอนุมัติ?' : confirmAction.type === 'transferred' ? 'ยืนยันการโอนเงิน?' : 'ยืนยันปฏิเสธ?'}</div>
                                         {confirmAction.type === 'transferred' && (
                                            <div className="mb-2">
-                                              <label className="block text-[10px] md:text-xs text-gray-500 mb-1">แนบสลิป (รูปภาพจะถูกส่งเข้า LINE พนักงานด้วย) <span className="text-red-500">*</span></label>
+                                              <label className="block text-[10px] md:text-xs text-gray-500 mb-1">
+                                                  แนบสลิป (รูปภาพจะถูกส่งเข้า LINE พนักงานด้วย)
+                                                  {!(user.role === ROLES.MANAGER && e.createdBy === user.uid) ? <span className="text-red-500"> *</span> : <span className="text-blue-500 font-bold ml-1">(ผู้จัดการเบิกเอง ไม่บังคับ)</span>}
+                                              </label>
                                               <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                                   <label className="cursor-pointer bg-gray-100 px-3 py-2 border rounded-lg text-xs flex items-center gap-1 hover:bg-gray-200 w-full sm:w-auto justify-center"><Paperclip size={14}/> เลือกไฟล์รูปสลิป... <input type="file" className="hidden" accept="image/*" onChange={handleSlipChange}/></label>
                                                   {transferSlip && <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded">✓ แนบรูปภาพแล้ว</span>}
@@ -1095,7 +1368,7 @@
                                            </div>
                                         )}
                                         <div className="flex gap-2">
-                                            <button disabled={updating || (confirmAction.type === 'transferred' && !transferSlip)} onClick={() => handleStatusUpdate(e.id, confirmAction.type)} className={`flex-1 ${confirmAction.type === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white text-sm py-2 rounded-lg font-bold disabled:opacity-40`}>
+                                            <button disabled={updating || (confirmAction.type === 'transferred' && !(user.role === ROLES.MANAGER && e.createdBy === user.uid) && !transferSlip)} onClick={() => handleStatusUpdate(e.id, confirmAction.type)} className={`flex-1 ${confirmAction.type === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white text-sm py-2 rounded-lg font-bold disabled:opacity-40`}>
                                                 {updating ? 'กำลังบันทึก...' : 'ยืนยัน'}
                                             </button>
                                             <button onClick={() => {setConfirmAction({id:null,type:null}); setTransferSlip(null); setRejectReason('');}} className="flex-1 bg-gray-200 text-gray-700 text-sm py-2 rounded-lg font-bold hover:bg-gray-300">ยกเลิก</button>
@@ -1117,7 +1390,7 @@
                   </div>
                 ))}
               </div>
-              {viewImage && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setViewImage(null)}><div className="bg-white p-2 rounded-lg max-w-3xl max-h-[90vh] overflow-auto relative"><button type="button" onClick={() => setViewImage(null)} className="absolute top-2 right-2 bg-gray-200 rounded-full p-1"><X size={20}/></button><img src={viewImage} alt="Receipt" className="max-w-full h-auto" /></div></div>)}
+              {viewImage && (<div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setViewImage(null)}><div className="bg-white p-2 rounded-lg max-w-3xl max-h-[90vh] overflow-auto relative"><button type="button" onClick={() => setViewImage(null)} className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors shadow-sm z-10"><X size={20}/></button><img src={viewImage} alt="Receipt" className="max-w-full h-auto rounded" /></div></div>)}
             </div>
           );
         };
@@ -1157,16 +1430,20 @@
                const expenseDateStr = e.date?.seconds ? new Date(e.date.seconds * 1000).toISOString().split('T')[0] : (e.date instanceof Date ? e.date.toISOString().split('T')[0] : '');
                if (dateRange.start && expenseDateStr < dateRange.start) return;
                if (dateRange.end && expenseDateStr > dateRange.end) return;
-               if (filterBranch !== 'ALL' && e.branchId !== filterBranch) return;
                if (filterUser !== 'ALL' && e.userId !== filterUser) return;
 
-               const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || '-');
                const statusObj = STATUS[e.status.toUpperCase()] || { label: e.status, color: '' };
                const approverName = e.approverId ? (userMap[e.approverId] || 'Unknown ID') : '-';
                
                if (e.items && Array.isArray(e.items)) { 
                    e.items.forEach(item => { 
                        if (filterCategory !== 'ALL' && item.category !== filterCategory) return;
+                       
+                       const itemBranchId = item.branchId || e.branchId;
+                       if (filterBranch !== 'ALL' && itemBranchId !== filterBranch) return;
+
+                       const branchName = itemBranchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === itemBranchId)?.name || '-');
+
                        flat.push({ 
                            id: e.id + '-' + item.id, runNumber: e.runNumber, date: item.date, description: item.description, 
                            category: item.category, amount: parseFloat(item.amount), status: statusObj.label, statusColor: statusObj.color, 
@@ -1175,6 +1452,10 @@
                    }); 
                } else { 
                    if (filterCategory !== 'ALL' && e.category !== filterCategory) return;
+                   if (filterBranch !== 'ALL' && e.branchId !== filterBranch) return;
+
+                   const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || '-');
+
                    flat.push({ 
                        id: e.id, runNumber: e.runNumber, date: e.date ? new Date(e.date.seconds * 1000).toISOString().split('T')[0] : '-', 
                        description: e.description, category: e.category, amount: parseFloat(e.amount), status: statusObj.label, 
@@ -1217,8 +1498,23 @@
               csvContent += "\n";
 
               csvContent += "รายละเอียดรายการเบิกจ่าย\n";
-              const header = ['เลขที่ใบเบิก', 'วันที่', 'รายละเอียด', 'หมวดหมู่', 'จำนวนเงิน', 'สถานะ', 'ผู้อนุมัติ', 'สาขา', 'ผู้เบิก', 'เหตุผลที่ไม่อนุมัติ']; 
-              const rows = reportData.map(item => [ item.runNumber || '-', item.date, `"${item.description.replace(/"/g, '""')}"`, EXPENSE_CATEGORIES.find(c => c.id === item.category)?.name || item.category, item.amount, item.status, item.approver, item.branch, item.requester, `"${(item.rejectReason || '').replace(/"/g, '""')}"` ]); 
+              const header = ['เลขที่ใบเบิก', 'วันที่', 'รายละเอียด', 'กลุ่มหมวดหมู่', 'รายการค่าใช้จ่าย', 'จำนวนเงิน', 'สถานะ', 'ผู้อนุมัติ', 'สาขา', 'ผู้เบิก', 'เหตุผลที่ไม่อนุมัติ']; 
+              const rows = reportData.map(item => {
+                  const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category);
+                  return [ 
+                      item.runNumber || '-', 
+                      item.date, 
+                      `"${item.description.replace(/"/g, '""')}"`, 
+                      `"${cat ? cat.group : '-'}"`,
+                      `"${cat ? cat.name : item.category}"`, 
+                      item.amount, 
+                      item.status, 
+                      item.approver, 
+                      item.branch, 
+                      item.requester, 
+                      `"${(item.rejectReason || '').replace(/"/g, '""')}"` 
+                  ];
+              }); 
               
               csvContent += [header.join(','), ...rows.map(r => r.join(','))].join('\n'); 
 
@@ -1303,7 +1599,7 @@
                            <tr>
                               <th className="p-4 text-sm font-semibold text-gray-600">วันที่/เลขที่</th>
                               <th className="p-4 text-sm font-semibold text-gray-600">รายละเอียด</th>
-                              <th className="p-4 text-sm font-semibold text-gray-600">หมวดหมู่</th>
+                              <th className="p-4 text-sm font-semibold text-gray-600">กลุ่ม / รายการ</th>
                               <th className="p-4 text-sm font-semibold text-gray-600">ผู้เบิก/สาขา</th>
                               <th className="p-4 text-sm font-semibold text-gray-600 text-right">จำนวนเงิน</th>
                               <th className="p-4 text-sm font-semibold text-gray-600 text-center">สถานะ</th>
@@ -1315,7 +1611,7 @@
                               <tr key={idx} className="hover:bg-gray-50">
                                  <td className="p-4 text-sm text-gray-600 whitespace-nowrap"><div>{item.date}</div><div className="text-[10px] md:text-xs text-blue-500 font-bold">{item.runNumber}</div></td>
                                  <td className="p-4 text-sm font-medium text-gray-800"><div className="w-48 truncate">{item.description}</div></td>
-                                 <td className="p-4 text-xs md:text-sm text-gray-500">{EXPENSE_CATEGORIES.find(c => c.id === item.category)?.name || item.category}</td>
+                                 <td className="p-4 text-xs md:text-sm text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700">{cat.group}</div><div className="text-gray-500">{cat.name}</div></> : item.category; })()}</td>
                                  <td className="p-4 text-sm text-gray-600"><div className="font-medium">{item.requester}</div><div className="text-[10px] md:text-xs text-gray-400">{item.branch}</div></td>
                                  <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{item.amount.toLocaleString()}</td>
                                  <td className="p-4 text-center"><span className={`inline-block px-2 py-0.5 rounded text-[10px] md:text-xs font-semibold ${item.statusColor}`}>{item.status}</span></td>
@@ -1538,7 +1834,10 @@
                              <tr key={emp.id} className="hover:bg-gray-50">
                                 {editingId === emp.id ? (
                                   <>
-                                    <td className="p-4"><input className="border p-2 rounded w-full text-sm" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /></td>
+                                    <td className="p-4">
+                                       <input className="border p-2 rounded w-full text-sm mb-1" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="ชื่อ-นามสกุล" />
+                                       <input className="border p-2 rounded w-full text-sm font-mono text-pink-600" value={editForm.pin} maxLength={4} onChange={e => setEditForm({...editForm, pin: e.target.value.replace(/[^0-9]/g, '')})} placeholder="PIN 4 หลัก" />
+                                    </td>
                                     <td className="p-4"><input className="border p-2 rounded w-full text-sm font-mono" value={editForm.lineUserId} onChange={e => setEditForm({...editForm, lineUserId: e.target.value})} placeholder="Line ID" /></td>
                                     <td className="p-4">
                                        <div className="flex gap-2 flex-col">
@@ -1550,7 +1849,7 @@
                                   </>
                                 ) : (
                                   <>
-                                    <td className="p-4"><div className="font-medium text-gray-800">{emp.name}</div><div className="text-xs text-gray-400">PIN: {emp.pin ? '••••' : '-'}</div></td>
+                                    <td className="p-4"><div className="font-medium text-gray-800">{emp.name}</div><div className="text-xs text-gray-500">PIN: <span className="font-mono font-bold text-pink-600">{emp.pin || '-'}</span></div></td>
                                     <td className="p-4 text-[10px] md:text-sm text-gray-600 font-mono">{emp.lineUserId || <span className="text-gray-300">-</span>}</td>
                                     <td className="p-4 text-sm text-gray-600"><span className={`text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded-full capitalize ${emp.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' : emp.role === ROLES.MANAGER ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>{emp.role}</span><span className="block mt-1 text-[10px] md:text-xs">{emp.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b => b.id === emp.branchId)?.name || '-'}</span></td>
                                     <td className="p-4 text-right"><button onClick={() => handleEdit(emp)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg" title="แก้ไข"><Edit size={16} /></button><button onClick={() => handleDelete(emp.id)} className="text-red-400 hover:bg-red-50 p-2 rounded-lg" title="ลบ"><Trash2 size={16} /></button></td>
@@ -1600,10 +1899,76 @@
           );
         };
 
-        // --- MainApp Container ---
+        const ProfileView = ({ user }) => {
+          const { showAlert } = useContext(UIContext);
+          const [newPin, setNewPin] = useState('');
+          const [loading, setLoading] = useState(false);
+
+          const handleUpdatePin = async (e) => {
+             e.preventDefault();
+             if (newPin.length !== 4) return showAlert('กรุณากรอกรหัส PIN ให้ครบ 4 หลัก', 'error');
+             
+             setLoading(true);
+             try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), { 
+                    pin: newPin 
+                });
+                showAlert('อัปเดตรหัส PIN สำเร็จแล้ว! คุณสามารถใช้รหัสใหม่ในการล็อกอินครั้งถัดไป', 'success');
+                setNewPin('');
+             } catch (err) {
+                console.error(err);
+                showAlert('เกิดข้อผิดพลาดในการเปลี่ยน PIN', 'error');
+             }
+             setLoading(false);
+          };
+
+          return (
+             <div className="max-w-2xl mx-auto space-y-6">
+                 <div className="bg-white p-6 rounded-xl shadow-sm flex items-center gap-4">
+                     <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-2xl shadow-sm">
+                         {user.name.charAt(0)}
+                     </div>
+                     <div>
+                         <h2 className="text-2xl font-bold text-gray-800">{user.name}</h2>
+                         <p className="text-pink-600 font-medium capitalize">{user.role}</p>
+                     </div>
+                 </div>
+
+                 <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100">
+                     <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                         <Settings className="text-gray-500"/> เปลี่ยนรหัสผ่าน (PIN)
+                     </h3>
+                     <form onSubmit={handleUpdatePin} className="space-y-4 max-w-sm">
+                         <div>
+                             <label className="block text-sm font-bold text-gray-700 mb-2">ตั้งค่ารหัส PIN ใหม่ (4 หลัก)</label>
+                             <input 
+                                 type="text" 
+                                 maxLength={4} 
+                                 inputMode="numeric" 
+                                 className="w-full p-4 border-2 border-pink-100 rounded-xl text-center tracking-[1em] font-bold text-2xl text-pink-600 focus:ring-4 focus:ring-pink-500/20 focus:border-pink-400 outline-none transition-all" 
+                                 placeholder="0000" 
+                                 value={newPin} 
+                                 onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); setNewPin(val); }} 
+                             />
+                             <p className="text-xs text-gray-500 mt-2">รหัส PIN ใช้สำหรับยืนยันตัวตนตอนเข้าสู่ระบบ</p>
+                         </div>
+                         <button 
+                             type="submit" 
+                             disabled={loading || newPin.length !== 4} 
+                             className="w-full bg-pink-500 text-white py-3.5 rounded-xl font-bold hover:bg-pink-600 transition-all disabled:opacity-50"
+                         >
+                             {loading ? 'กำลังบันทึก...' : 'บันทึกรหัส PIN ใหม่'}
+                         </button>
+                     </form>
+                 </div>
+             </div>
+          );
+        };
+
         const MainApp = ({ user, onLogout }) => {
           const [view, setView] = useState('dashboard');
           const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+          const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
           const [expenses, setExpenses] = useState([]);
           const [branches, setBranches] = useState([]);
           const [companyName, setCompanyName] = useState('');
@@ -1638,6 +2003,7 @@
             { id: 'users', label: 'จัดการพนักงาน', icon: <Users size={20} />, roles: [ROLES.ADMIN] },
             { id: 'branches', label: 'จัดการสาขา', icon: <Building2 size={20} />, roles: [ROLES.ADMIN] },
             { id: 'settings', label: 'ตั้งค่าระบบ', icon: <Settings size={20} />, roles: [ROLES.ADMIN] },
+            { id: 'profile', label: 'บัญชีของฉัน', icon: <UserCircle size={20} />, roles: ['all'] },
           ];
 
           const filteredMenu = menuItems.filter(item => item.roles.includes('all') || item.roles.includes(user.role));
@@ -1646,12 +2012,13 @@
             switch (view) {
               case 'dashboard': return <DashboardView expenses={expenses} user={user} branches={branches} />;
               case 'request': return <RequestForm user={user} setView={setView} branches={branches} expenses={expenses} />;
-              case 'history': return <HistoryView expenses={expenses} getBranchName={getBranchName} user={user} />;
-              case 'approvals': return <ApprovalQueue expenses={expenses} user={user} />;
+              case 'history': return <HistoryView expenses={expenses} getBranchName={getBranchName} user={user} branches={branches} />;
+              case 'approvals': return <ApprovalQueue expenses={expenses} user={user} branches={branches} />;
               case 'reports': return <ReportView expenses={expenses} branches={branches} companyName={companyName} />;
               case 'branches': return <BranchManager branches={branches} />;
               case 'users': return <EmployeeManager branches={branches} />;
               case 'settings': return <SettingsView user={user} />;
+              case 'profile': return <ProfileView user={user} />;
               default: return <DashboardView expenses={expenses} user={user} branches={branches} />;
             }
           };
@@ -1659,34 +2026,63 @@
           return (
             <div className="flex h-screen paw-bg font-sans overflow-hidden">
               {/* Desktop Sidebar */}
-              <aside className="hidden md:flex flex-col w-64 bg-white/90 backdrop-blur-md shadow-xl border-r border-pink-200 z-10">
-                <div className="p-6 border-b border-pink-100 flex items-center gap-3">
-                  <div className="bg-pink-100 p-2 rounded-xl text-pink-600 shadow-inner"><Cat size={28} /></div>
-                  <div className="flex flex-col">
-                      <span className="font-extrabold text-xl text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-amber-600 leading-tight">MeowEx</span>
-                      {companyName && <span className="text-[10px] font-bold text-gray-400 leading-tight w-36 truncate">{companyName}</span>}
+              <aside className={`hidden md:flex flex-col bg-white/90 backdrop-blur-md shadow-xl border-r border-pink-200 z-10 sidebar-transition relative ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
+                <div className={`p-6 border-b border-pink-100 flex items-center ${isSidebarCollapsed ? 'justify-center px-0 flex-col gap-2' : 'gap-3'}`}>
+                  {/* Hamburger Button */}
+                  <button 
+                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+                    className={`text-pink-500 hover:bg-pink-50 p-2 rounded-lg transition-colors flex-shrink-0 ${isSidebarCollapsed ? '' : 'absolute left-4'}`}
+                    title={isSidebarCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
+                  >
+                    <Menu size={20} />
+                  </button>
+
+                  <div className={`flex items-center gap-3 ${isSidebarCollapsed ? '' : 'ml-10'}`}>
+                      {!isSidebarCollapsed && <div className="bg-pink-100 p-2 rounded-xl text-pink-600 shadow-inner flex-shrink-0"><Cat size={28} /></div>}
+                      {isSidebarCollapsed && <div className="bg-pink-100 p-1.5 rounded-xl text-pink-600 shadow-inner flex-shrink-0 mt-2"><Cat size={24} /></div>}
+                      {!isSidebarCollapsed && (
+                          <div className="flex flex-col overflow-hidden">
+                              <span className="font-extrabold text-xl text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-amber-600 leading-tight">MeowEx 3.0</span>
+                              {companyName && <span className="text-[10px] font-bold text-gray-400 leading-tight w-full truncate">{companyName}</span>}
+                          </div>
+                      )}
                   </div>
                 </div>
-                <div className="p-4 border-b border-pink-100 bg-pink-50/50">
-                   <div className="flex items-center gap-3">
-                     <div className="bg-white p-2 rounded-full border-2 border-pink-200 shadow-sm"><Cat className="text-pink-500" size={24}/></div>
-                     <div>
-                       <p className="font-bold text-sm text-pink-900">{user.name}</p>
-                       <p className="text-xs text-pink-600/70 capitalize font-medium">{user.role}</p>
-                       {user.branchId && <p className="text-xs text-amber-600 font-bold truncate w-32 flex items-center gap-1"><PawPrint size={10}/> {getBranchName(user.branchId)}</p>}
+                <div className={`p-4 border-b border-pink-100 bg-pink-50/50 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
+                   <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                     <div className="bg-white p-2 rounded-full border-2 border-pink-200 shadow-sm flex-shrink-0" title={isSidebarCollapsed ? user.name : ''}>
+                         <Cat className="text-pink-500" size={20}/>
                      </div>
+                     {!isSidebarCollapsed && (
+                         <div className="overflow-hidden">
+                           <p className="font-bold text-sm text-pink-900 truncate">{user.name}</p>
+                           <p className="text-xs text-pink-600/70 capitalize font-medium">{user.role}</p>
+                           {user.branchId && <p className="text-xs text-amber-600 font-bold truncate flex items-center gap-1"><PawPrint size={10}/> {getBranchName(user.branchId)}</p>}
+                         </div>
+                     )}
                    </div>
                 </div>
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-pink-200">
                   {filteredMenu.map(item => (
-                    <button key={item.id} onClick={() => setView(item.id)} className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl transition-all font-semibold ${view === item.id ? 'bg-gradient-to-r from-pink-500 to-pink-400 text-white shadow-md shadow-pink-500/30 scale-[1.02]' : 'text-slate-700 hover:bg-pink-50 hover:text-pink-700'}`}>
-                      {item.icon}<span>{item.label}</span>
+                    <button 
+                      key={item.id} 
+                      onClick={() => setView(item.id)} 
+                      title={isSidebarCollapsed ? item.label : ''}
+                      className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'} py-3.5 rounded-2xl transition-all font-semibold ${view === item.id ? 'bg-gradient-to-r from-pink-500 to-pink-400 text-white shadow-md shadow-pink-500/30 scale-[1.02]' : 'text-slate-700 hover:bg-pink-50 hover:text-pink-700'}`}
+                    >
+                      <div className="flex-shrink-0">{item.icon}</div>
+                      {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
                     </button>
                   ))}
                 </nav>
                 <div className="p-4 border-t border-pink-100 bg-white">
-                  <button onClick={onLogout} className="w-full flex items-center justify-center space-x-2 px-4 py-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl transition font-bold border border-transparent hover:border-red-100">
-                    <LogOut size={18} /><span>ออกจากระบบ</span>
+                  <button 
+                    onClick={onLogout} 
+                    title={isSidebarCollapsed ? "ออกจากระบบ" : ""}
+                    className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-center space-x-2 px-4'} py-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl transition font-bold border border-transparent hover:border-red-100`}
+                  >
+                    <div className="flex-shrink-0"><LogOut size={18} /></div>
+                    {!isSidebarCollapsed && <span>ออกจากระบบ</span>}
                   </button>
                 </div>
               </aside>
@@ -1776,7 +2172,6 @@
           );
         };
 
-        // --- App Entry Point ---
         const App = () => {
           const [user, setUser] = useState(null);
           const [loading, setLoading] = useState(true);
@@ -1814,7 +2209,6 @@
           );
         };
 
-        // Render application
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
