@@ -142,7 +142,7 @@
           { id: 'other', name: 'อื่นๆ' }
         ];
 
-        const ROLES = { ADMIN: 'admin', MANAGER: 'manager', EMPLOYEE: 'employee' };
+        const ROLES = { ADMIN: 'admin', EXECUTIVE: 'executive', MANAGER: 'manager', EMPLOYEE: 'employee' };
 
         const STATUS = {
           PENDING: { label: 'รออนุมัติ', color: 'bg-yellow-100 text-yellow-800', lineText: 'รอการตรวจสอบ' },
@@ -1138,16 +1138,18 @@
                                 {EXPENSE_CATEGORIES.filter(c => c.group === selectedGroup).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
-                        {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN) && (
+                        {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXECUTIVE) && (
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-medium text-blue-700 mb-1">สาขา <span className="text-red-500">*</span></label>
                                 <select className="w-full p-2 border border-blue-200 bg-blue-50 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={currentItem.branchId} onChange={e => setCurrentItem({...currentItem, branchId: e.target.value})}>
                                     {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                                     <option value="HEADQUARTER">สำนักงานใหญ่</option>
+                                    <option value="IT_DEPT">ฝ่าย IT</option>
+                                    <option value="HR_DEPT">ฝ่าย HR</option>
                                 </select>
                             </div>
                         )}
-                        <div className={`md:col-span-${(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN) ? '3' : '5'}`}><label className="block text-xs font-medium text-gray-700 mb-1">รายละเอียด <span className="text-red-500">*</span></label><input type="text" required className="w-full p-2 border rounded-lg text-sm" placeholder="รายละเอียดค่าใช้จ่าย" value={currentItem.description} onChange={e => setCurrentItem({...currentItem, description: e.target.value})}/></div>
+                        <div className={`md:col-span-${(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXECUTIVE) ? '3' : '5'}`}><label className="block text-xs font-medium text-gray-700 mb-1">รายละเอียด <span className="text-red-500">*</span></label><input type="text" required className="w-full p-2 border rounded-lg text-sm" placeholder="รายละเอียดค่าใช้จ่าย" value={currentItem.description} onChange={e => setCurrentItem({...currentItem, description: e.target.value})}/></div>
                         <div className="md:col-span-3"><label className="block text-xs font-medium text-gray-700 mb-1">จำนวนเงิน <span className="text-red-500">*</span></label><input type="number" required min="0.01" step="0.01" className="w-full p-2 border rounded-lg text-sm" placeholder="0.00" value={currentItem.amount} onChange={e => setCurrentItem({...currentItem, amount: e.target.value})}/></div>
                         <div className="md:col-span-5">
                             <label className="block text-xs font-medium text-gray-700 mb-1">แนบรูปใบเสร็จ {user.role === ROLES.EMPLOYEE && <span className="text-red-500">*</span>}</label>
@@ -1183,7 +1185,7 @@
                                             <div className="font-medium text-gray-800">{item.description}</div>
                                             <div className="text-xs text-gray-500">
                                                 {item.date} • {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} - ${cat.name}` : item.category; })()} 
-                                                {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN) && (<span className="ml-2 text-blue-600 font-semibold border border-blue-200 bg-blue-50 px-1 rounded">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id === item.branchId)?.name}</span>)}
+                                                {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXECUTIVE) && (<span className="ml-2 text-blue-600 font-semibold border border-blue-200 bg-blue-50 px-1 rounded">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : item.branchId === 'IT_DEPT' ? 'ฝ่าย IT' : item.branchId === 'HR_DEPT' ? 'ฝ่าย HR' : branches.find(b=>b.id === item.branchId)?.name}</span>)}
                                             </div>
                                         </td>
                                         <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(item.amount).toLocaleString()}</td>
@@ -1912,8 +1914,8 @@
                     <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2"><UserPlus size={18}/> ลงทะเบียนพนักงานใหม่</h3>
                     <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                        <div><label className="text-xs font-semibold text-blue-700 mb-1 block">ชื่อ-นามสกุล</label><input className="w-full p-2 border rounded" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} placeholder="ชื่อพนักงาน" /></div>
-                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">ตำแหน่ง</label><select className="w-full p-2 border rounded" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select></div>
-                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">สาขา</label><select className="w-full p-2 border rounded" value={newUser.branchId} onChange={e => setNewUser({...newUser, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option></select></div>
+                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">ตำแหน่ง</label><select className="w-full p-2 border rounded" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.EXECUTIVE}>ผู้บริหาร</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select></div>
+                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">สาขา</label><select className="w-full p-2 border rounded" value={newUser.branchId} onChange={e => setNewUser({...newUser, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option><option value="IT_DEPT">ฝ่าย IT</option><option value="HR_DEPT">ฝ่าย HR</option></select></div>
                        <div><label className="text-xs font-semibold text-blue-700 mb-1 block">PIN เริ่มต้น</label><input className="w-full p-2 border rounded text-center" value={newUser.pin} maxLength={4} onChange={e => setNewUser({...newUser, pin: e.target.value})} /></div>
                        <div className="md:col-span-2"><label className="text-xs font-semibold text-green-700 mb-1 block">Line UserID (สำหรับแจ้งเตือน)</label><input className="w-full p-2 border rounded border-green-200 bg-green-50 font-mono text-sm" value={newUser.lineUserId} onChange={e => setNewUser({...newUser, lineUserId: e.target.value})} placeholder="Uxxxxxxxxxxxxxxxxxxxx" /></div>
                        <div className="md:col-span-2"><button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700">บันทึกพนักงานใหม่</button></div>
@@ -1936,8 +1938,8 @@
                                     <td className="p-4"><input className="border p-2 rounded w-full text-sm font-mono" value={editForm.lineUserId} onChange={e => setEditForm({...editForm, lineUserId: e.target.value})} placeholder="Line ID" /></td>
                                     <td className="p-4">
                                        <div className="flex gap-2 flex-col">
-                                         <select className="border p-2 rounded w-full text-sm" value={editForm.role} onChange={e => setEditForm({...editForm, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select>
-                                         <select className="border p-2 rounded w-full text-sm" value={editForm.branchId} onChange={e => setEditForm({...editForm, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option></select>
+                                         <select className="border p-2 rounded w-full text-sm" value={editForm.role} onChange={e => setEditForm({...editForm, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.EXECUTIVE}>ผู้บริหาร</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select>
+                                         <select className="border p-2 rounded w-full text-sm" value={editForm.branchId} onChange={e => setEditForm({...editForm, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option><option value="IT_DEPT">ฝ่าย IT</option><option value="HR_DEPT">ฝ่าย HR</option></select>
                                        </div>
                                     </td>
                                     <td className="p-4 text-right flex justify-end gap-2"><button onClick={handleSave} className="text-green-600 bg-green-50 px-3 py-1.5 rounded hover:bg-green-100 text-sm font-bold">บันทึก</button><button onClick={() => setEditingId(null)} className="text-gray-500 bg-gray-50 px-3 py-1.5 rounded hover:bg-gray-100 text-sm">ยกเลิก</button></td>
@@ -1946,7 +1948,7 @@
                                   <>
                                     <td className="p-4"><div className="font-medium text-gray-800">{emp.name}</div><div className="text-xs text-gray-500">PIN: <span className="font-mono font-bold text-pink-600">{emp.pin || '-'}</span></div></td>
                                     <td className="p-4 text-[10px] md:text-sm text-gray-600 font-mono">{emp.lineUserId || <span className="text-gray-300">-</span>}</td>
-                                    <td className="p-4 text-sm text-gray-600"><span className={`text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded-full capitalize ${emp.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' : emp.role === ROLES.MANAGER ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>{emp.role}</span><span className="block mt-1 text-[10px] md:text-xs">{emp.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b => b.id === emp.branchId)?.name || '-'}</span></td>
+                                    <td className="p-4 text-sm text-gray-600"><span className={`text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded-full capitalize ${emp.role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' : emp.role === ROLES.EXECUTIVE ? 'bg-indigo-100 text-indigo-700' : emp.role === ROLES.MANAGER ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>{emp.role === 'executive' ? 'ผู้บริหาร' : emp.role === 'manager' ? 'หัวหน้างาน' : emp.role === 'admin' ? 'ผู้ดูแลระบบ' : 'พนักงาน'}</span><span className="block mt-1 text-[10px] md:text-xs">{emp.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : emp.branchId === 'IT_DEPT' ? 'ฝ่าย IT' : emp.branchId === 'HR_DEPT' ? 'ฝ่าย HR' : branches.find(b => b.id === emp.branchId)?.name || '-'}</span></td>
                                     <td className="p-4 text-right"><button onClick={() => handleEdit(emp)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg" title="แก้ไข"><Edit size={16} /></button><button onClick={() => handleDelete(emp.id)} className="text-red-400 hover:bg-red-50 p-2 rounded-lg" title="ลบ"><Trash2 size={16} /></button></td>
                                   </>
                                 )}
@@ -2086,13 +2088,15 @@
 
           const getBranchName = (id) => {
               if (id === 'HEADQUARTER') return 'สำนักงานใหญ่';
+              if (id === 'IT_DEPT') return 'ฝ่าย IT';
+              if (id === 'HR_DEPT') return 'ฝ่าย HR';
               return branches.find(b => b.id === id)?.name || 'Unknown';
           };
 
           const menuItems = [
             { id: 'dashboard', label: 'ภาพรวม', icon: <LayoutDashboard size={20} />, roles: ['all'] },
-            { id: 'request', label: 'ขอเบิกค่าใช้จ่าย', icon: <PlusCircle size={20} />, roles: [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.ADMIN] },
-            { id: 'history', label: 'ประวัติรายการ', icon: <History size={20} />, roles: [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.ADMIN] },
+            { id: 'request', label: 'ขอเบิกค่าใช้จ่าย', icon: <PlusCircle size={20} />, roles: [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.EXECUTIVE, ROLES.ADMIN] },
+            { id: 'history', label: 'ประวัติรายการ', icon: <History size={20} />, roles: [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.EXECUTIVE, ROLES.ADMIN] },
             { id: 'approvals', label: 'รออนุมัติ/โอน', icon: <ClipboardCheck size={20} />, roles: [ROLES.MANAGER] },
             { id: 'reports', label: 'รายงานสรุป', icon: <FileSpreadsheet size={20} />, roles: [ROLES.ADMIN, ROLES.MANAGER] },
             { id: 'users', label: 'จัดการพนักงาน', icon: <Users size={20} />, roles: [ROLES.ADMIN] },
