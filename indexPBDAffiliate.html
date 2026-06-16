@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PBD Affiliate</title>
+  <title>HR System - PBD Group</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -14,6 +14,12 @@
     ::-webkit-scrollbar-track { background: #f1f1f1; }
     ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #a0a0a5; }
+    
+    /* Dark Theme Scrollbar for Pipeline & Jobs */
+    .custom-dark-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-dark-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-dark-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .custom-dark-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex" id="body">
@@ -26,7 +32,7 @@
       <div class="text-center">
         <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4" id="icon-login"></div>
         <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">เข้าสู่ระบบ</h2>
-        <p class="text-sm text-gray-500 mt-2">ระบบจัดการประวัติการสมัครงาน (PBD Affiliate)</p>
+        <p class="text-sm text-gray-500 mt-2">ระบบจัดการประวัติการสมัครงาน (HR System)</p>
       </div>
       <div id="login-error" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center border border-red-200">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
       <form id="login-form" class="space-y-4">
@@ -43,12 +49,12 @@
         </button>
       </form>
       <div class="mt-4 text-xs text-gray-400 text-center bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-1">
-       <!-- <strong>ข้อมูลทดสอบการเข้าระบบ: (รหัสผ่าน password)</strong><br/>
+        <strong>ข้อมูลทดสอบการเข้าระบบ: (รหัสผ่าน password)</strong><br/>
         Admin: <code>admin</code> |
         เจ้าหน้าที่: <code>officer</code><br/>
         เจ้าหน้าที่ (Online): <code>on_off</code> |
         เจ้าหน้าที่ (Offline): <code>off_off</code><br/>
-        พนักงาน: <code>emp</code> -->
+        พนักงาน: <code>emp</code>
       </div>
     </div>
   </div>
@@ -65,8 +71,8 @@
     <div id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-indigo-900 text-white flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 -translate-x-full">
       <div class="p-6 flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-bold tracking-wider text-indigo-200">PBD Affiliate</h1>
-          <p class="text-xs text-indigo-400 mt-2 border-b border-indigo-700 pb-4">ระบบจัดการประวัติผู้สมัครและคอมมิชชั่น</p>
+          <h1 class="text-2xl font-bold tracking-wider text-indigo-200">HR System</h1>
+          <p class="text-xs text-indigo-400 mt-2 border-b border-indigo-700 pb-4">ระบบจัดการประวัติผู้สมัคร</p>
         </div>
         <button class="lg:hidden text-indigo-300 hover:text-white" onclick="toggleMobileMenu()" id="icon-close-menu"></button>
       </div>
@@ -89,13 +95,13 @@
       <div class="lg:hidden bg-indigo-900 text-white px-4 py-3 flex items-center justify-between shadow-md z-20">
         <div class="flex items-center space-x-3">
           <button onclick="toggleMobileMenu()" class="p-1 text-indigo-200 hover:text-white focus:outline-none" id="icon-menu"></button>
-          <h1 class="text-lg font-bold">PBD Affiliate</h1>
+          <h1 class="text-lg font-bold">HR System</h1>
         </div>
         <div class="text-xs bg-indigo-800 px-2 py-1 rounded-full truncate max-w-[120px]" id="mobile-header-name"></div>
       </div>
 
       <!-- Views Container -->
-      <div id="views-container" class="flex-1 overflow-auto relative">
+      <div id="views-container" class="flex-1 overflow-auto relative bg-slate-900">
         <!-- Views will be injected here via JS -->
       </div>
     </div>
@@ -125,24 +131,38 @@
       { id: 6, username: 'emp2', password: 'password', role: 'employee', name: 'คุณพนักงาน 2', empCode: 'REF002' },
     ];
 
+    const MOCK_JOBS = [
+      { id: 1, title: 'IT SUPPORT', department: 'เทคโนโลยีสารสนเทศ', positions: 9, salary: '1200000', deadline: '-', status: 'เปิดรับ' },
+      { id: 2, title: 'Sales Executive', department: 'ฝ่ายขายและการตลาด', positions: 3, salary: '25,000 - 45,000+ค่าคอม', deadline: '10 มิ.ย. 2026', status: 'เปิดรับ' },
+      { id: 3, title: 'HR Business Partner', department: 'ทรัพยากรบุคคล', positions: 1, salary: '50,000 - 80,000', deadline: '15 มิ.ย. 2026', status: 'เปิดรับ' },
+      { id: 4, title: 'UI/UX Designer', department: 'เทคโนโลยีสารสนเทศ', positions: 1, salary: '40,000 - 70,000', deadline: '25 มิ.ย. 2026', status: 'เปิดรับ' },
+      { id: 5, title: 'Full-Stack Developer', department: 'เทคโนโลยีสารสนเทศ', positions: 2, salary: '55,000 - 85,000', deadline: '25 มิ.ย. 2026', status: 'เปิดรับ' }
+    ];
+
     const MOCK_CANDIDATES = [
-      { id: 1, timestamp: '2023-10-01 09:30:00', referrerCode: 'REF001', fullName: 'สมชาย ใจดี', nickname: 'ชาย', age: 25, gender: 'ชาย', education: 'ปริญญาตรี', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขาบางนา', phone: '081-111-1111', lineId: 'somchai.j', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-05', interviewResult: 'ผ่าน', status: 'รอเริ่มงาน', startDate: '2023-10-15', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
-      { id: 2, timestamp: '2023-10-05 14:15:00', referrerCode: 'REF002', fullName: 'สมหญิง รักงาน', nickname: 'หญิง', age: 28, gender: 'หญิง', education: 'ปริญญาโท', interestedPosition: 'ผู้จัดการสาขา', targetBranch: 'สาขาลาดพร้าว', phone: '082-222-2222', lineId: 'somying.r', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-10', interviewResult: 'ผ่าน', status: 'ทำงานแล้ว', startDate: '2023-10-20', endDate: '-', days15: 'ผ่าน', days30: 'รอประเมิน', paidCommission: 500, paymentHistory: [{ date: '2023-11-05', amount: 500 }], pdfUrl: '#', pdfEditUrl: '#' },
-      { id: 3, timestamp: '2023-10-10 10:00:00', referrerCode: 'REF001', fullName: 'วิชัย มุ่งมั่น', nickname: 'ชัย', age: 22, gender: 'ชาย', education: 'ปวส.', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขารังสิต', phone: '083-333-3333', lineId: 'wichai.m', address: 'ปทุมธานี', officerName: 'พี่ชมพู่', callResult: 'ไม่สะดวกรับสาย', orientationDate: '-', interviewResult: '-', status: 'ติดตามผล', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
-      { id: 4, timestamp: '2023-10-15 16:45:00', referrerCode: 'REF003', fullName: 'นารี สวยงาม', nickname: 'นา', age: 26, gender: 'หญิง', education: 'ปริญญาตรี', interestedPosition: 'ธุรการ', targetBranch: 'สาขาบางนา', phone: '084-444-4444', lineId: 'naree.s', address: 'สมุทรปราการ', officerName: 'พี่ชมพู่', callResult: 'ปฏิเสธ', orientationDate: '-', interviewResult: '-', status: 'ยกเลิก', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
-      { id: 5, timestamp: '2023-11-02 11:20:00', referrerCode: 'REF002', fullName: 'กิตติ เก่งกาจ', nickname: 'กิต', age: 30, gender: 'ชาย', education: 'ปริญญาตรี', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขาลาดพร้าว', phone: '085-555-5555', lineId: 'kitti.k', address: 'นนทบุรี', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-11-05', interviewResult: 'รอสัมภาษณ์', status: 'รอสัมภาษณ์', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 1, timestamp: '2023-10-01 09:30:00', referrerCode: 'REF001', fullName: 'สมชาย ใจดี', nickname: 'ชาย', age: 25, gender: 'ชาย', education: 'ปริญญาตรี', interestedPosition: 'Sales Executive', targetBranch: 'สาขาบางนา', phone: '081-111-1111', lineId: 'somchai.j', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-05', interviewResult: 'ผ่าน', status: 'รอเริ่มงาน', startDate: '2023-10-15', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 2, timestamp: '2023-10-05 14:15:00', referrerCode: 'REF002', fullName: 'สมหญิง รักงาน', nickname: 'หญิง', age: 28, gender: 'หญิง', education: 'ปริญญาโท', interestedPosition: 'HR Business Partner', targetBranch: 'สาขาลาดพร้าว', phone: '082-222-2222', lineId: 'somying.r', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-10', interviewResult: 'ผ่าน', status: 'ทำงานแล้ว', startDate: '2023-10-20', endDate: '-', days15: 'ผ่าน', days30: 'รอประเมิน', paidCommission: 500, paymentHistory: [{ date: '2023-11-05', amount: 500 }], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 3, timestamp: '2023-10-10 10:00:00', referrerCode: 'REF001', fullName: 'วิชัย มุ่งมั่น', nickname: 'ชัย', age: 22, gender: 'ชาย', education: 'ปวส.', interestedPosition: 'Sales Executive', targetBranch: 'สาขารังสิต', phone: '083-333-3333', lineId: 'wichai.m', address: 'ปทุมธานี', officerName: 'พี่ชมพู่', callResult: 'ไม่สะดวกรับสาย', orientationDate: '-', interviewResult: '-', status: 'ติดตามผล', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 4, timestamp: '2023-10-15 16:45:00', referrerCode: 'REF003', fullName: 'นารี สวยงาม', nickname: 'นา', age: 26, gender: 'หญิง', education: 'ปริญญาตรี', interestedPosition: 'UI/UX Designer', targetBranch: 'สาขาบางนา', phone: '084-444-4444', lineId: 'naree.s', address: 'สมุทรปราการ', officerName: 'พี่ชมพู่', callResult: 'ปฏิเสธ', orientationDate: '-', interviewResult: '-', status: 'ยกเลิก', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
+      { id: 5, timestamp: '2023-11-02 11:20:00', referrerCode: 'REF002', fullName: 'กิตติ เก่งกาจ', nickname: 'กิต', age: 30, gender: 'ชาย', education: 'ปริญญาตรี', interestedPosition: 'IT SUPPORT', targetBranch: 'สาขาลาดพร้าว', phone: '085-555-5555', lineId: 'kitti.k', address: 'นนทบุรี', officerName: 'พี่ชมพู่', callResult: 'สนใจรับฟัง', orientationDate: '2023-11-05', interviewResult: 'รอสัมภาษณ์', status: 'รอประเมิน', startDate: '-', endDate: '-', days15: '-', days30: '-', paidCommission: 0, paymentHistory: [], pdfUrl: '#', pdfEditUrl: '#' },
     ];
 
     const MOCK_HR_OFFLINE_CANDIDATES = [
-      { id: 1, timestamp: '2023-10-01 09:30:00', pdfUrl: '#', fullName: 'สมชาย ใจดี', interestedPosition: 'พนักงานขาย', targetBranch: 'สาขาบางนา', phone: '081-111-1111', nickname: 'ชาย', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-05', interviewResult: 'ผ่าน', status: 'รอเริ่มงาน', startDate: '2023-10-15', gender: 'ชาย', education: 'ปริญญาตรี', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', age: 25, lineId: 'somchai.j', referrerName: 'พี่เอ', fpIncrement: '1', fpPresentationUrl: '#', fpEditUrl: '#' },
+      { id: 1, timestamp: '2023-10-01 09:30:00', pdfUrl: '#', fullName: 'สมชาย ใจดี', interestedPosition: 'Sales Executive', targetBranch: 'สาขาบางนา', phone: '081-111-1111', nickname: 'ชาย', callResult: 'สนใจรับฟัง', orientationDate: '2023-10-05', interviewResult: 'ผ่าน', status: 'รอเริ่มงาน', startDate: '2023-10-15', gender: 'ชาย', education: 'ปริญญาตรี', address: 'กรุงเทพมหานคร', officerName: 'พี่ชมพู่', age: 25, lineId: 'somchai.j', referrerName: 'พี่เอ', fpIncrement: '1', fpPresentationUrl: '#', fpEditUrl: '#' },
+    ];
+
+    const MOCK_CHAT_MESSAGES = [
+      { id: 1, timestamp: '2026-04-29 09:00:00', senderUsername: 'admin', senderName: 'คุณผู้ดูแลระบบ', message: 'สวัสดีครับทุกคน ระบบแชทส่วนกลางพร้อมใช้งานแล้ว 🎉' }
     ];
 
     // --- Icons SVG Strings ---
     const ICONS = {
+      Briefcase: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`,
       Users: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
       Wallet: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>`,
       FileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
       LogOut: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
+      Search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
       Download: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
       Edit: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
       Calculator: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="16" y1="10" x2="16" y2="10"></line><line x1="12" y1="10" x2="12" y2="10"></line><line x1="8" y1="10" x2="8" y2="10"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="12" y1="18" x2="12" y2="18"></line><line x1="8" y1="18" x2="8" y2="18"></line></svg>`,
@@ -158,7 +178,9 @@
       ChevronDown: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
       Settings: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
       MessageCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`,
-      Trophy: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`
+      Trophy: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
+      Send: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
+      Kanban: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>`
     };
 
     // Set static icons
@@ -170,24 +192,28 @@
     // --- State Management ---
     const STATE = {
       currentUser: null,
-      currentView: 'overview',
+      currentView: 'jobs',
       users: [...INITIAL_USERS],
       candidates: [],
       hrOfflineCandidates: [],
+      jobs: [...MOCK_JOBS], // 📌 เพิ่ม State ข้อมูลตำแหน่งงาน
+      selectedJob: null,    // 📌 เก็บชื่อตำแหน่งที่เลือกล่าสุด สำหรับหน้า Pipeline
       settings: { lineToken: '', lineGroupId: '' },
       loading: true,
       isMobileMenuOpen: false,
       
       // Feature Specific State
       dashboard: { filters: { dateFrom: '', dateTo: '', referrer: '', branch: '', position: '' }, showFilters: window.innerWidth > 768 },
-      hrOffline: { filters: { dateFrom: '', dateTo: '', name: '', branch: '', position: '', sortDate: 'desc' }, showFilters: window.innerWidth > 768 }, // 📌 เพิ่ม sortDate ใน State Filter
+      hrOffline: { filters: { dateFrom: '', dateTo: '', name: '', branch: '', position: '', sortDate: 'desc' }, showFilters: window.innerWidth > 768 }, 
       payment: { activeTab: 'pending', collapsedGroups: {} },
       editModal: { data: null, newDate: '', newAmount: '' },
-      hrOfflineEditModal: { data: null }, // 📌 เพิ่ม State Modal สำหรับ HR Offline
+      hrOfflineEditModal: { data: null }, 
       userModal: { data: null },
-      usersView: { search: '' }, // 📌 เพิ่ม State สำหรับช่องค้นหาหน้าจัดการพนักงาน
+      jobModal: { data: null, confirmDelete: false }, // 📌 State สำหรับ Modal จัดการตำแหน่งงาน
+      usersView: { search: '' }, 
       paymentGroupModal: { group: null, date: new Date().toISOString().split('T')[0] },
-      leaderboard: { month: new Date().toISOString().slice(0,7) } // 📌 State สำหรับกระดานผู้นำ
+      leaderboard: { month: new Date().toISOString().slice(0,7) },
+      chat: { messages: [], isOpen: false, intervalId: null } 
     };
 
     // --- Helpers ---
@@ -247,19 +273,31 @@
           STATE.currentUser = JSON.parse(savedUser);
           document.getElementById('login-screen').classList.add('hidden-view');
           document.getElementById('app-layout').classList.remove('hidden-view');
+          document.getElementById('chat-widget').classList.remove('hidden-view'); // 📌 เปิดวิดเจ็ตแชทเมื่อมี Session
           document.getElementById('sidebar-user-name').innerText = `ผู้ใช้งาน: ${STATE.currentUser.name}`;
           document.getElementById('sidebar-user-role').innerText = `Role: ${STATE.currentUser.role}`;
           document.getElementById('mobile-header-name').innerText = STATE.currentUser.name;
           
-          let defaultView = 'overview';
+          let defaultView = 'jobs';
           if (STATE.currentUser.role === 'employee') defaultView = 'wallet';
           if (STATE.currentUser.role === 'OfflineOfficer') defaultView = 'hrOffline'; 
           
           const lastView = localStorage.getItem('hr_last_view');
           STATE.currentView = lastView || defaultView;
           renderSidebar();
+          startChatPolling(); // 📌 เริ่มระบบดึงแชท
         } catch(e) {
           localStorage.removeItem('hr_session_user');
+        }
+      }
+
+      // 📌 กู้คืนข้อมูลตำแหน่งงานจาก LocalStorage
+      const savedJobs = localStorage.getItem('hr_jobs_data');
+      if (savedJobs) {
+        try {
+          STATE.jobs = JSON.parse(savedJobs);
+        } catch(e) {
+          STATE.jobs = [...MOCK_JOBS];
         }
       }
 
@@ -287,6 +325,15 @@
           const setRes = await fetch(GOOGLE_SHEET_API_URL + '?sheet=settings');
           const setData = await setRes.json();
           if (setData && !setData.error) STATE.settings = setData;
+
+          // Fetch Chat Messages
+          try {
+            const chatRes = await fetch(GOOGLE_SHEET_API_URL + '?sheet=chat_messages');
+            const chatData = await chatRes.json();
+            if (Array.isArray(chatData) && !chatData.error) {
+              STATE.chat.messages = chatData;
+            }
+          } catch(e) {}
 
           // Fetch HR Offline Candidates
           try {
@@ -316,6 +363,7 @@
     function loadMockData() {
       STATE.candidates = MOCK_CANDIDATES.map(c => ({ ...c, referrerCode: formatRefCode(c.referrerCode) }));
       STATE.hrOfflineCandidates = [...MOCK_HR_OFFLINE_CANDIDATES];
+      STATE.chat.messages = [...MOCK_CHAT_MESSAGES];
       STATE.users = INITIAL_USERS.map(u => ({ ...u, empCode: formatRefCode(u.empCode) }));
     }
 
@@ -333,17 +381,19 @@
         
         document.getElementById('login-screen').classList.add('hidden-view');
         document.getElementById('app-layout').classList.remove('hidden-view');
+        document.getElementById('chat-widget').classList.remove('hidden-view'); // 📌 เปิดวิดเจ็ตแชท
         
         document.getElementById('sidebar-user-name').innerText = `ผู้ใช้งาน: ${user.name}`;
         document.getElementById('sidebar-user-role').innerText = `Role: ${user.role}`;
         document.getElementById('mobile-header-name').innerText = user.name;
         
         // 📌 ตั้งค่าหน้าแรกตาม Role ที่เข้าสู่ระบบ
-        let defaultView = 'overview';
+        let defaultView = 'jobs';
         if (user.role === 'employee') defaultView = 'wallet'; // 📌 พนักงานให้เข้าหน้า Wallet ก่อน
         if (user.role === 'OfflineOfficer') defaultView = 'hrOffline'; // Offline Officer เข้าหน้านี้เป็นหน้าแรก
         
         navigate(defaultView);
+        startChatPolling(); // 📌 เริ่มระบบดึงแชท
       } else {
         document.getElementById('login-error').classList.remove('hidden');
       }
@@ -356,10 +406,13 @@
       localStorage.removeItem('hr_last_view');
       
       document.getElementById('app-layout').classList.add('hidden-view');
+      document.getElementById('chat-widget').classList.add('hidden-view'); // 📌 ปิดวิดเจ็ตแชท
       document.getElementById('login-screen').classList.remove('hidden-view');
       document.getElementById('login-username').value = '';
       document.getElementById('login-password').value = '';
       document.getElementById('login-error').classList.add('hidden');
+      
+      stopChatPolling(); // 📌 หยุดระบบดึงแชท
     }
 
     // --- Navigation ---
@@ -396,9 +449,14 @@
 
       // 📌 ควบคุมการแสดงผลเมนูด้วย Role ที่กำหนดอย่างชัดเจน
       if (['admin', 'officer', 'OnlineOfficer'].includes(role)) {
-        html += `<button onclick="navigate('overview')" class="${btnClass('overview')}">${ICONS.PieChart}<span>Dashboard</span></button>`;
+        html += `<button onclick="navigate('jobs')" class="${btnClass('jobs')}">${ICONS.Briefcase}<span>ตำแหน่งงาน (Jobs)</span></button>`;
       }
       
+      // 📌 เมนู Pipeline Kanban สำหรับ Admin และ Officer
+      if (['admin', 'officer', 'OnlineOfficer'].includes(role)) {
+        html += `<button onclick="navigate('pipeline')" class="${btnClass('pipeline')}">${ICONS.Kanban}<span>Pipeline ผู้สมัคร</span></button>`;
+      }
+
       if (['employee'].includes(role)) {
         html += `<button onclick="navigate('wallet')" class="${btnClass('wallet')}">${ICONS.Wallet}<span>กระเป๋าเงิน (My Wallet)</span></button>`;
       }
@@ -424,7 +482,7 @@
         html += `<button onclick="navigate('payment')" class="${btnClass('payment')}">${ICONS.CreditCard}<span>ระบบทำจ่าย & ประวัติ</span></button>`;
       }
       
-      if (['admin', 'officer', 'OnlineOfficer'].includes(role)) {
+      if (['admin', 'officer', 'OnlineOfficer', 'employee'].includes(role)) {
         html += `<button onclick="navigate('commission')" class="${btnClass('commission')}">${ICONS.Calculator}<span>รายการค่าคอมมิชชั่น</span></button>`;
       }
       
@@ -442,16 +500,27 @@
         return;
       }
 
+      // ปรับ Background สีเข้มสำหรับหน้า Jobs และ Pipeline
+      if (['jobs', 'pipeline'].includes(STATE.currentView)) {
+        container.classList.add('bg-slate-900');
+        container.classList.remove('bg-gray-50');
+      } else {
+        container.classList.remove('bg-slate-900');
+        container.classList.add('bg-gray-50');
+      }
+
       switch(STATE.currentView) {
-        case 'overview': renderOverview(container); break;
+        case 'jobs': renderJobs(container); break;
+        case 'pipeline': renderPipeline(container); break;
         case 'wallet': renderWallet(container); break;
-        case 'leaderboard': renderLeaderboard(container); break; // 📌 Render Leaderboard
+        case 'leaderboard': renderLeaderboard(container); break;
         case 'dashboard': renderDashboard(container); break;
         case 'hrOffline': renderHrOffline(container); break;
         case 'payment': renderPayment(container); break;
         case 'commission': renderCommission(container); break;
         case 'users': renderUsers(container); break;
         case 'settings': renderSettings(container); break;
+        default: renderJobs(container); break;
       }
     }
 
@@ -459,11 +528,395 @@
     // VIEWS RENDERING LOGIC
     // =========================================================================
 
+    // --- Jobs View (ตำแหน่งงาน) ---
+    function renderJobs(container) {
+      const canManageJobs = STATE.currentUser && ['admin', 'officer', 'OnlineOfficer'].includes(STATE.currentUser.role);
+      
+      let html = `
+        <div class="h-full flex flex-col p-6 bg-slate-900 overflow-auto custom-dark-scrollbar">
+            <div class="mb-6 flex-shrink-0 flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-1">ตำแหน่งงานที่เปิดรับ</h2>
+                    <p class="text-slate-400 text-sm">จัดการตำแหน่งงาน และดูผู้สมัครในแต่ละตำแหน่ง</p>
+                </div>
+                ${canManageJobs ? `<button onclick="openJobModal(null)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center shadow-sm transition-colors w-full sm:w-auto justify-center">+ <span class="ml-1">เพิ่มตำแหน่งงาน</span></button>` : ''}
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+      `;
+
+      if (STATE.jobs.length === 0) {
+          html += `<div class="col-span-full text-center py-12 border-2 border-dashed border-slate-700 rounded-xl text-slate-500">ยังไม่มีตำแหน่งงานที่บันทึกไว้</div>`;
+      }
+
+      STATE.jobs.forEach(job => {
+          // คำนวณจำนวนผู้สมัครจากข้อมูล Candidates ที่สนใจตำแหน่งนี้
+          const applicantCount = STATE.candidates.filter(c => c.interestedPosition === job.title).length;
+          
+          let statusBadgeClass = job.status === 'เปิดรับ' ? 'bg-green-900/40 text-green-400 border-green-800/50' : 'bg-red-900/40 text-red-400 border-red-800/50';
+
+          html += `
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex flex-col shadow-lg hover:border-slate-500 transition-colors relative group">
+                ${canManageJobs ? `
+                <div class="absolute top-4 right-4 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="openJobModal(${job.id})" class="p-2 text-slate-400 hover:text-white bg-slate-700 hover:bg-indigo-600 rounded-lg transition-colors shadow-sm" title="แก้ไขตำแหน่งงาน">
+                        ${ICONS.Edit}
+                    </button>
+                </div>` : ''}
+                
+                <div class="flex justify-between items-start mb-1 pr-12">
+                    <h3 class="text-white font-bold text-lg leading-tight">${job.title}</h3>
+                </div>
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="text-slate-400 text-sm">${job.department}</span>
+                    <span class="${statusBadgeClass} text-[10px] px-2 py-0.5 rounded-full border">${job.status}</span>
+                </div>
+                
+                <div class="border-t border-slate-700/50 pt-4 space-y-2 mb-6 flex-1">
+                    <div class="flex items-center text-sm text-slate-300">
+                        <span class="mr-2">💼</span> ต้องการ <span class="text-white font-bold mx-1">${job.positions}</span> ตำแหน่ง
+                    </div>
+                    <div class="flex items-center text-sm text-slate-300">
+                        <span class="mr-2">💰</span> ${job.salary}
+                    </div>
+                    <div class="flex items-center text-sm text-slate-300">
+                        <span class="mr-2">📅</span> ปิดรับ ${job.deadline}
+                    </div>
+                </div>
+                
+                <div class="mt-auto flex items-center justify-between">
+                    <div class="bg-slate-700/50 text-slate-300 text-xs px-3 py-1.5 rounded flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        ${applicantCount} ผู้สมัคร
+                    </div>
+                    <button onclick="openJobPipeline('${job.title}')" class="text-slate-300 text-xs border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-700 transition-colors">
+                        ดูผู้สมัคร &rarr;
+                    </button>
+                </div>
+            </div>
+          `;
+      });
+
+      html += `
+            </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    window.openJobPipeline = (jobTitle) => {
+        STATE.selectedJob = jobTitle;
+        navigate('pipeline');
+    };
+
+    // --- Job Modal Management ---
+    window.openJobModal = (id) => {
+        let data = { id: null, title: '', department: '', positions: 1, salary: '', deadline: '', status: 'เปิดรับ' };
+        if (id) {
+            const found = STATE.jobs.find(j => j.id === id);
+            if (found) data = { ...found };
+        }
+        STATE.jobModal = { data: data, confirmDelete: false };
+        renderJobModal();
+    };
+
+    function renderJobModal() {
+        const mc = document.getElementById('global-modal-container');
+        const d = STATE.jobModal.data;
+        const isDel = STATE.jobModal.confirmDelete;
+
+        mc.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center sticky top-0">
+                    <h3 class="font-bold text-gray-800 flex items-center text-lg">${ICONS.Briefcase}<span class="ml-2">${d.id ? 'แก้ไขตำแหน่งงาน' : 'เพิ่มตำแหน่งงานใหม่'}</span></h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+                </div>
+                <form onsubmit="saveJob(event)" class="p-6 space-y-4 overflow-y-auto">
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-700">ชื่อตำแหน่ง (Job Title)</label>
+                        <input type="text" id="jm-title" required value="${d.title}" placeholder="เช่น Sales Executive" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-700">แผนก (Department)</label>
+                        <input type="text" id="jm-dept" required value="${d.department}" placeholder="เช่น ฝ่ายขายและการตลาด" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-700">จำนวนที่รับ (อัตรา)</label>
+                            <input type="number" id="jm-pos" required min="1" value="${d.positions}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-700">สถานะ</label>
+                            <select id="jm-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                                <option value="เปิดรับ" ${d.status==='เปิดรับ'?'selected':''}>เปิดรับ (Active)</option>
+                                <option value="ปิดรับ" ${d.status==='ปิดรับ'?'selected':''}>ปิดรับ (Closed)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-700">เงินเดือน/รายได้</label>
+                        <input type="text" id="jm-sal" value="${d.salary}" placeholder="เช่น 25,000 - 35,000 หรือ ตามตกลง" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-700">วันปิดรับสมัคร (Deadline)</label>
+                        <input type="text" id="jm-dead" value="${d.deadline}" placeholder="เช่น 31 ธ.ค. 2026 หรือ -" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                        ${d.id ?
+                            (isDel ?
+                                `<div class="flex items-center gap-2 bg-red-50 p-2 rounded-lg border border-red-100">
+                                    <span class="text-xs text-red-600 font-bold">ยืนยันการลบ?</span>
+                                    <button type="button" onclick="confirmDeleteJob()" class="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-bold hover:bg-red-700 transition-colors shadow-sm">ลบเลย</button>
+                                    <button type="button" onclick="cancelDeleteJob()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded text-xs font-bold hover:bg-gray-50 transition-colors shadow-sm">ยกเลิก</button>
+                                </div>`
+                                :
+                                `<button type="button" onclick="promptDeleteJob()" class="text-red-500 text-sm hover:text-red-700 hover:underline font-medium px-2 py-1">ลบตำแหน่งนี้</button>`
+                            )
+                            : '<div></div>'
+                        }
+                        <div class="flex gap-2">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">ยกเลิก</button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors shadow-sm">บันทึก</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        `;
+        mc.classList.remove('hidden');
+    }
+
+    window.promptDeleteJob = () => { STATE.jobModal.confirmDelete = true; syncJobFormToState(); renderJobModal(); };
+    window.cancelDeleteJob = () => { STATE.jobModal.confirmDelete = false; syncJobFormToState(); renderJobModal(); };
+    
+    window.confirmDeleteJob = async () => {
+        const id = STATE.jobModal.data.id;
+        STATE.jobs = STATE.jobs.filter(j => j.id !== id);
+        
+        // 📌 บันทึกลง LocalStorage
+        localStorage.setItem('hr_jobs_data', JSON.stringify(STATE.jobs));
+        
+        closeModal();
+        renderCurrentView();
+        
+        // จำลองการยิง API ไปลบข้อมูล (ถ้ามีการเชื่อมต่อจริง)
+        if (GOOGLE_SHEET_API_URL) {
+            try { 
+                await fetch(GOOGLE_SHEET_API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ type: 'job', action: 'delete', data: { id } }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                }); 
+            } catch(e) { console.error(e); }
+        }
+    };
+
+    function syncJobFormToState() {
+        const d = STATE.jobModal.data;
+        const getV = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
+        d.title = getV('jm-title'); 
+        d.department = getV('jm-dept'); 
+        d.positions = parseInt(getV('jm-pos')) || 1;
+        d.salary = getV('jm-sal'); 
+        d.deadline = getV('jm-dead'); 
+        d.status = getV('jm-status');
+    }
+
+    window.saveJob = async (e) => {
+        e.preventDefault();
+        syncJobFormToState();
+        const d = STATE.jobModal.data;
+        const isNew = !d.id;
+        
+        if (isNew) {
+            d.id = STATE.jobs.length ? Math.max(...STATE.jobs.map(j => j.id)) + 1 : 1;
+            STATE.jobs.push(d);
+        } else {
+            const idx = STATE.jobs.findIndex(j => j.id === d.id);
+            if (idx > -1) STATE.jobs[idx] = d;
+        }
+        
+        // 📌 บันทึกลง LocalStorage
+        localStorage.setItem('hr_jobs_data', JSON.stringify(STATE.jobs));
+        
+        closeModal();
+        renderCurrentView();
+
+        // จำลองการยิง API ไปอัปเดตข้อมูล (ถ้ามีการเชื่อมต่อจริง)
+        if (GOOGLE_SHEET_API_URL) {
+            try { 
+                await fetch(GOOGLE_SHEET_API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ type: 'job', action: isNew ? 'add' : 'update', data: d }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                }); 
+            } catch(e) { console.error(e); }
+        }
+    };
+
+    // --- Pipeline View (Kanban) ---
+    function renderPipeline(container) {
+        // ใช้ข้อมูลจาก candidates ทั้งหมด
+        let cands = STATE.candidates;
+        
+        // 📌 Filter by Selected Job if present
+        let jobTitleDisplay = 'ทั้งหมด';
+        if (STATE.selectedJob && STATE.selectedJob !== 'ทั้งหมด') {
+            cands = cands.filter(c => c.interestedPosition === STATE.selectedJob);
+            jobTitleDisplay = STATE.selectedJob;
+        }
+
+        // กำหนดคอลัมน์ของ Pipeline อิงตามสถานะที่ใช้งานอยู่จริง
+        const pipelineCols = [
+            { key: 'รอประเมิน', title: 'สมัคร', icon: '📥', borderColor: 'border-t-blue-500', bgColor: 'bg-slate-800' },
+            { key: 'ติดตามผล', title: 'คัดกรอง', icon: '🔍', borderColor: 'border-t-cyan-500', bgColor: 'bg-slate-800' },
+            { key: 'รอสัมภาษณ์', title: 'สัมภาษณ์', icon: '💬', borderColor: 'border-t-orange-500', bgColor: 'bg-slate-800' },
+            { key: 'รอเริ่มงาน', title: 'ส่ง Offer', icon: '📩', borderColor: 'border-t-purple-500', bgColor: 'bg-slate-800' },
+            { key: 'ทำงานแล้ว', title: 'จ้างงาน', icon: '✅', borderColor: 'border-t-green-500', bgColor: 'bg-slate-800' },
+            { key: 'ปฏิเสธ', title: 'ปฏิเสธ / ยกเลิก', icon: '❌', borderColor: 'border-t-red-500', bgColor: 'bg-slate-800' }
+        ];
+
+        let html = `
+            <div class="h-full flex flex-col bg-slate-900">
+                <!-- Header -->
+                <div class="px-6 py-4 flex flex-col sm:flex-row justify-between sm:items-center bg-slate-900 border-b border-slate-800 flex-shrink-0 gap-3">
+                    <div class="flex items-center gap-3">
+                        <button onclick="navigate('jobs')" class="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition" title="กลับไปหน้าตำแหน่งงาน">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        </button>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <span class="text-indigo-400">${ICONS.Kanban}</span> Pipeline ผู้สมัคร
+                            <span class="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-full border border-slate-700 ml-1 font-normal">${jobTitleDisplay}</span>
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- Kanban Board Area -->
+                <div class="flex-1 overflow-x-auto overflow-y-hidden p-6 flex gap-4 custom-dark-scrollbar snap-x">
+        `;
+
+        pipelineCols.forEach(col => {
+            // แมปสถานะยกเลิก, ลาออก, พ้นสภาพ ไปรวมในช่อง "ปฏิเสธ"
+            let colCandidates = [];
+            if (col.key === 'ปฏิเสธ') {
+                colCandidates = cands.filter(c => ['ยกเลิก', 'ลาออก', 'พ้นสภาพ'].includes(c.status));
+            } else {
+                colCandidates = cands.filter(c => c.status === col.key);
+            }
+            
+            html += `
+                <div class="min-w-[280px] w-[280px] max-w-[280px] flex flex-col bg-transparent rounded-xl border border-slate-700 border-t-[3px] ${col.borderColor} snap-start h-full">
+                    
+                    <!-- Column Header -->
+                    <div class="p-3 border-b border-slate-700 flex justify-between items-center text-white flex-shrink-0 bg-slate-800/50 rounded-t-xl">
+                        <div class="font-bold text-sm flex items-center gap-2">
+                            <span>${col.icon}</span> ${col.title}
+                        </div>
+                        <div class="bg-slate-700 text-xs px-2 py-0.5 rounded-full font-medium text-slate-300">
+                            ${colCandidates.length}
+                        </div>
+                    </div>
+
+                    <!-- Column Body (Cards) -->
+                    <div class="flex-1 overflow-y-auto p-3 space-y-3 custom-dark-scrollbar bg-slate-900/50 rounded-b-xl">
+            `;
+
+            colCandidates.forEach(c => {
+                // สร้าง Rating จำลอง (ถ้ายังไม่มีระบบให้คะแนนจริง)
+                const stars = `
+                    <div class="flex text-yellow-500 text-[10px] mt-2 mb-2">
+                        <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    </div>
+                `;
+
+                // Select options for moving
+                let selectOptions = pipelineCols.map(opt => {
+                    if (opt.key === 'ปฏิเสธ') return ''; // Handle separately
+                    return `<option value="${opt.key}" ${c.status === opt.key ? 'selected' : ''}>ย้ายไป: ${opt.title}</option>`;
+                }).join('');
+                
+                selectOptions += `
+                    <option value="ยกเลิก" ${c.status === 'ยกเลิก' ? 'selected' : ''}>ย้ายไป: ยกเลิก</option>
+                    <option value="ลาออก" ${c.status === 'ลาออก' ? 'selected' : ''}>ย้ายไป: ลาออก</option>
+                    <option value="พ้นสภาพ" ${c.status === 'พ้นสภาพ' ? 'selected' : ''}>ย้ายไป: พ้นสภาพ</option>
+                `;
+
+                html += `
+                    <div class="bg-slate-800 p-3 rounded-lg shadow-sm border border-slate-700 hover:border-slate-500 transition-colors cursor-pointer" onclick="openEditCandidate(${c.id})">
+                        <div class="font-bold text-white text-sm mb-0.5 line-clamp-1">${c.fullName}</div>
+                        <div class="text-[11px] text-slate-400 mb-2 line-clamp-1">${c.interestedPosition || 'ไม่ระบุตำแหน่ง'}</div>
+                        
+                        <div class="text-[11px] text-slate-300 flex items-center gap-1.5 mb-1">
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            <span class="truncate">${c.lineId || c.phone || '-'}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-300 flex items-center gap-1.5">
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                            ${c.phone || '-'}
+                        </div>
+                        
+                        ${stars}
+                        
+                        <div class="mt-2 pt-2 border-t border-slate-700" onclick="event.stopPropagation()">
+                            <select onchange="updatePipelineStatus(${c.id}, this.value)" class="w-full bg-slate-900 text-slate-300 text-[11px] border border-slate-700 rounded p-1.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer">
+                                ${selectOptions}
+                            </select>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    // 📌 ฟังก์ชันอัปเดตสถานะจากหน้า Pipeline
+    window.updatePipelineStatus = async (id, newStatus) => {
+        const idx = STATE.candidates.findIndex(c => c.id === id);
+        if (idx > -1) {
+            const c = STATE.candidates[idx];
+            c.status = newStatus;
+            
+            // Auto Update Dates
+            if (newStatus === 'ทำงานแล้ว' && (!c.startDate || c.startDate === '-')) c.startDate = new Date().toISOString().split('T')[0];
+            if (['ลาออก', 'พ้นสภาพ'].includes(newStatus) && (!c.endDate || c.endDate === '-')) c.endDate = new Date().toISOString().split('T')[0];
+            
+            renderCurrentView(); // Re-render to reflect the change visually
+            
+            if (GOOGLE_SHEET_API_URL) {
+                try {
+                    const pay = {...c, paymentHistory: JSON.stringify(c.paymentHistory)};
+                    await fetch(GOOGLE_SHEET_API_URL, {
+                        method: 'POST', 
+                        body: JSON.stringify({ action: 'update', data: pay }), 
+                        headers:{'Content-Type':'text/plain;charset=utf-8'}
+                    });
+                } catch(err){ console.error(err); }
+            }
+        }
+    };
+
     // --- Leaderboard View (กระดานผู้นำ) ---
     function renderLeaderboard(container) {
       const fMonth = STATE.leaderboard.month; // "YYYY-MM"
       
       const stats = {};
+      let totalMonthCount = 0;
+      let totalMonthCommission = 0;
+
       STATE.candidates.forEach(c => {
          const rCode = c.referrerCode;
          if(!rCode || rCode === '-') return;
@@ -474,7 +927,6 @@
          }
 
          // 1. นับยอดแนะนำ (ดูจากประทับเวลาว่าอยู่ในเดือนที่เลือกหรือไม่)
-         // รูปแบบ timestamp อาจเป็น YYYY-MM-DD หรือ DD/MM/YYYY
          let cMonth = '';
          const datePart = (c.timestamp || '').split(' ')[0];
          if (datePart.includes('-')) {
@@ -486,6 +938,7 @@
          
          if (cMonth === fMonth) {
              stats[rCode].count += 1;
+             totalMonthCount += 1;
          }
 
          // 2. นับยอดคอมมิชชั่น (ดูจากประวัติการทำจ่ายที่จ่ายในเดือนที่เลือก)
@@ -496,7 +949,9 @@
                      pMonth = ph.date.substring(0,7);
                  }
                  if (pMonth === fMonth) {
-                     stats[rCode].commission += Number(ph.amount) || 0;
+                     const amt = Number(ph.amount) || 0;
+                     stats[rCode].commission += amt;
+                     totalMonthCommission += amt;
                  }
              });
          }
@@ -511,20 +966,20 @@
           let bgClass = "";
           let badge = "";
           
-          if (index === 0) { rankClass = "text-yellow-600 text-xl font-extrabold"; bgClass = "bg-yellow-50/60 border-l-4 border-yellow-400"; badge = "🥇"; } 
+          if (index === 0) { rankClass = "text-yellow-600 text-xl font-extrabold"; bgClass = "bg-yellow-50/50 border-l-4 border-yellow-400"; badge = "🥇"; } 
           else if (index === 1) { rankClass = "text-gray-400 text-lg font-bold"; bgClass = "bg-gray-50 border-l-4 border-gray-300"; badge = "🥈"; } 
-          else if (index === 2) { rankClass = "text-amber-700 text-lg font-bold"; bgClass = "bg-orange-50/40 border-l-4 border-orange-300"; badge = "🥉"; } 
+          else if (index === 2) { rankClass = "text-amber-700 text-lg font-bold"; bgClass = "bg-orange-50/30 border-l-4 border-orange-300"; badge = "🥉"; } 
           else { rankClass = "text-gray-400 font-medium"; badge = `${index + 1}`; bgClass = "border-l-4 border-transparent"; }
 
           const valStr = type === 'count' ? `${item.count} คน` : `฿${item.commission.toLocaleString()}`;
           const valColor = type === 'count' ? 'text-indigo-600' : 'text-green-600';
 
           return `
-          <li class="flex items-center justify-between p-4 hover:bg-gray-100 transition-colors ${bgClass}">
+          <li class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${bgClass}">
               <div class="flex items-center gap-4">
                   <div class="w-8 text-center ${rankClass}">${badge}</div>
                   <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">${item.name.charAt(0)}</div>
+                      <div class="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">${item.name.charAt(0)}</div>
                       <div>
                           <p class="font-bold text-gray-800 text-sm sm:text-base">${item.name}</p>
                           <p class="text-xs text-gray-500">รหัส: ${item.code}</p>
@@ -541,56 +996,78 @@
       const topRefHTML = topRef.length > 0 ? topRef.map((item, i) => renderItem(item, i, 'count')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการแนะนำในเดือนนี้</li>';
       const topEarnHTML = topEarn.length > 0 ? topEarn.map((item, i) => renderItem(item, i, 'comm')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการจ่ายค่าคอมมิชชั่นในเดือนนี้</li>';
 
+      const [y, m] = fMonth.split('-');
+      const monthNamesTh = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      const monthDisplay = `${monthNamesTh[parseInt(m)-1]} ${y}`;
+
       container.innerHTML = `
-        <div class="p-4 sm:p-6 max-w-5xl mx-auto h-full overflow-auto pb-20">
-           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <div class="p-4 sm:p-6 max-w-7xl mx-auto h-full overflow-auto pb-20">
+           <!-- Header & Month Picker -->
+           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 gap-4">
               <div>
                  <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">${ICONS.Trophy} กระดานผู้นำ (Leaderboard)</h2>
                  <p class="text-sm text-gray-500">จัดอันดับยอดแนะนำและรายได้ประจำเดือน</p>
               </div>
               <div class="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-gray-200 w-full sm:w-auto">
                  <label class="text-sm font-medium text-gray-600 pl-2">เลือกเดือน:</label>
-                 <input type="month" value="${fMonth}" onchange="updateLeaderboardMonth(this.value)" class="border-none bg-gray-50 p-2 rounded text-sm font-bold text-indigo-700 focus:ring-0 cursor-pointer flex-1">
+                 <input type="month" value="${fMonth}" onchange="updateLeaderboardMonth(this.value)" class="border-none bg-gray-50 p-2 rounded text-sm font-bold text-indigo-700 focus:ring-0 cursor-pointer flex-1 outline-none">
               </div>
            </div>
 
+           <!-- Hero Card (Wallet Style) -->
+           <div class="bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl mb-6 relative overflow-hidden">
+             <div class="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full bg-white opacity-10 blur-2xl"></div>
+             <div class="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white opacity-10 blur-xl"></div>
+             
+             <div class="relative z-10">
+               <p class="text-pink-100 text-sm font-medium mb-1">ยอดรวมผู้ได้รับการแนะนำประจำเดือน ${monthDisplay}</p>
+               <div class="flex items-baseline gap-2">
+                 <span class="text-4xl sm:text-5xl font-extrabold tracking-tight">${totalMonthCount}</span>
+                 <span class="text-pink-200 text-sm font-medium mb-1">คน</span>
+               </div>
+               
+               <div class="mt-8 flex justify-between items-end border-t border-pink-400/30 pt-5">
+                 <div>
+                   <p class="text-xs text-pink-100 mb-0.5">ยอดจ่ายค่าคอมมิชชั่นรวมประจำเดือน</p>
+                   <p class="text-lg sm:text-xl font-bold">฿${totalMonthCommission.toLocaleString()}</p>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+           <!-- Tip Box -->
            <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2 shadow-sm">
              <span>💡 <strong>Tip:</strong> หากต้องการดูข้อมูลทดสอบที่มีในระบบ ลองเปลี่ยนเดือนเป็น <strong>ตุลาคม หรือ พฤศจิกายน 2023</strong> ดูนะครับ</span>
            </div>
 
+           <!-- Leaderboard Grid -->
            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <!-- Top Referrers -->
-              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                 <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white flex justify-between items-center shadow-inner">
-                    <div class="flex items-center gap-3">
-                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.Users}</div>
-                       <div>
-                         <h3 class="font-bold text-lg leading-tight">นักแนะนำยอดเยี่ยม</h3>
-                         <p class="text-xs text-blue-100">เรียงตามจำนวนคนที่แนะนำมาได้</p>
-                       </div>
-                    </div>
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                 <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 class="font-bold text-gray-800 text-sm sm:text-base flex items-center gap-2">
+                        <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg">${ICONS.Users}</div>
+                        นักแนะนำยอดเยี่ยม
+                    </h3>
                  </div>
-                 <div class="p-0 flex-1 bg-gray-50/30">
+                 <div class="p-0 flex-1">
                     <ul class="divide-y divide-gray-100">
-                       ${topRefHTML}
+                        ${topRefHTML}
                     </ul>
                  </div>
               </div>
 
               <!-- Top Earners -->
-              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                 <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-white flex justify-between items-center shadow-inner">
-                    <div class="flex items-center gap-3">
-                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.DollarSign}</div>
-                       <div>
-                         <h3 class="font-bold text-lg leading-tight">เศรษฐีประจำเดือน</h3>
-                         <p class="text-xs text-orange-100">เรียงตามยอดค่าคอมมิชชั่นที่ได้รับแล้ว</p>
-                       </div>
-                    </div>
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                 <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 class="font-bold text-gray-800 text-sm sm:text-base flex items-center gap-2">
+                        <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">${ICONS.DollarSign}</div>
+                        เศรษฐีประจำเดือน
+                    </h3>
                  </div>
-                 <div class="p-0 flex-1 bg-gray-50/30">
+                 <div class="p-0 flex-1">
                     <ul class="divide-y divide-gray-100">
-                       ${topEarnHTML}
+                        ${topEarnHTML}
                     </ul>
                  </div>
               </div>
@@ -603,7 +1080,6 @@
         STATE.leaderboard.month = val;
         renderCurrentView();
     };
-
 
     // --- Wallet View (For Employees) ---
     function renderWallet(container) {
@@ -778,12 +1254,14 @@
         data = data.filter(c => String(c.referrerCode || '').trim().toLowerCase() === myCode);
       }
 
-      let startedWork = 0, failedOrCancel = 0;
+      let startedWork = 0, failedOrCancel = 0, pendingWork = 0;
       const refC = {}, posC = {}, branchC = {}, ageC = { 'ต่ำกว่า 20': 0, '20-25': 0, '26-30': 0, 'มากกว่า 30': 0 }, statusC = {};
 
       data.forEach(c => {
         if (c.status === 'ทำงานแล้ว') startedWork++;
         if (c.status === 'ยกเลิก' || c.interviewResult === 'ไม่ผ่าน') failedOrCancel++;
+        if (['รอสัมภาษณ์', 'รอเริ่มงาน', 'ติดตามผล'].includes(c.status)) pendingWork++;
+        
         statusC[c.status] = (statusC[c.status] || 0) + 1;
         const pos = c.interestedPosition || 'ไม่ระบุ'; posC[pos] = (posC[pos] || 0) + 1;
         const branch = c.targetBranch || 'ไม่ระบุ'; branchC[branch] = (branchC[branch] || 0) + 1;
@@ -798,6 +1276,12 @@
       let topRef = { name: '-', count: 0 };
       Object.entries(refC).forEach(([name, count]) => { if (count > topRef.count) topRef = { name, count }; });
       const sortMap = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
+      
+      const sortedBranches = sortMap(branchC);
+      const topBranch = sortedBranches.length > 0 ? sortedBranches[0][0] : '-';
+      
+      const sortedPositions = sortMap(posC);
+      const topPosition = sortedPositions.length > 0 ? sortedPositions[0][0] : '-';
 
       const renderBars = (arr, colorClass) => {
         if(arr.length===0) return '<p class="text-center text-gray-500 my-auto">ไม่มีข้อมูล</p>';
@@ -832,21 +1316,75 @@
       }).join('');
 
       container.innerHTML = `
-        <div class="flex flex-col h-full overflow-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-          <div><h2 class="text-xl sm:text-2xl font-bold text-gray-800">ภาพรวมระบบ (Dashboard)</h2><p class="text-xs sm:text-sm text-gray-500 mt-1">สรุปข้อมูลสถิติการฝากประวัติและการทำงาน</p></div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-indigo-100 text-indigo-600 mr-3 sm:mr-4">${ICONS.FileText}</div><div><p class="text-xs sm:text-sm font-medium text-gray-500">ใบฝากประวัติทั้งหมด</p><p class="text-xl sm:text-2xl font-bold text-gray-900">${data.length} <span class="text-xs sm:text-sm font-medium text-gray-500">ใบ</span></p></div></div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-green-100 text-green-600 mr-3 sm:mr-4">${ICONS.Users}</div><div><p class="text-xs sm:text-sm font-medium text-gray-500">เริ่มงานแล้ว</p><p class="text-xl sm:text-2xl font-bold text-green-600">${startedWork} <span class="text-xs sm:text-sm font-medium text-gray-500">คน</span></p></div></div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-red-100 text-red-600 mr-3 sm:mr-4">${ICONS.BarChart}</div><div><p class="text-xs sm:text-sm font-medium text-gray-500">ยกเลิก / ไม่ผ่าน</p><p class="text-xl sm:text-2xl font-bold text-red-600">${failedOrCancel} <span class="text-xs sm:text-sm font-medium text-gray-500">คน</span></p></div></div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex items-center"><div class="p-3 sm:p-4 rounded-full bg-amber-100 text-amber-600 mr-3 sm:mr-4">${ICONS.PieChart}</div><div class="overflow-hidden"><p class="text-xs sm:text-sm font-medium text-gray-500">ผู้แนะนำสูงสุด</p><p class="text-lg sm:text-xl font-bold text-amber-600 truncate">${topRef.name}</p><p class="text-xs text-gray-500">จำนวน ${topRef.count} คน</p></div></div>
+        <div class="p-4 sm:p-6 pb-20 max-w-7xl mx-auto h-full overflow-auto">
+          <!-- Header -->
+          <div class="flex justify-between items-end mb-6 gap-4">
+             <div>
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">${ICONS.PieChart} Dashboard</h2>
+                <p class="text-sm text-gray-500">ภาพรวมสถิติการสรรหาบุคลากรของ PBD Group</p>
+             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 flex-1 pb-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">ตำแหน่งงานที่สนใจ</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortMap(posC), {text:'text-indigo-600', bg:'bg-indigo-500'})}</div></div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สาขาที่ต้องการสมัคร</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortMap(branchC), {text:'text-emerald-600', bg:'bg-emerald-500'})}</div></div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สถิติผู้แนะนำ</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortMap(refC), {text:'text-amber-600', bg:'bg-amber-500'})}</div></div>
+
+          <!-- Hero Card (Wallet Style) -->
+          <div class="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl mb-6 relative overflow-hidden">
+             <div class="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full bg-white opacity-10 blur-2xl"></div>
+             <div class="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white opacity-10 blur-xl"></div>
+             <div class="relative z-10">
+                 <p class="text-blue-100 text-sm font-medium mb-1">ใบฝากประวัติทั้งหมด (Total Candidates)</p>
+                 <div class="flex items-baseline gap-2">
+                     <span class="text-4xl sm:text-5xl font-extrabold tracking-tight">${data.length}</span>
+                     <span class="text-blue-200 text-sm font-medium mb-1">รายการ</span>
+                 </div>
+                 <div class="mt-8 flex justify-between items-end border-t border-blue-400/30 pt-5">
+                     <div>
+                         <p class="text-xs text-blue-200 mb-0.5">เริ่มงานแล้ว (Started Work)</p>
+                         <p class="text-lg sm:text-xl font-bold text-green-300">${startedWork} คน</p>
+                     </div>
+                     <div class="text-right">
+                         <p class="text-xs text-blue-200 mb-0.5">ยกเลิก / ไม่ผ่าน (Failed)</p>
+                         <p class="text-lg sm:text-xl font-bold text-red-300">${failedOrCancel} คน</p>
+                     </div>
+                 </div>
+             </div>
+          </div>
+
+          <!-- Stats Grid (Wallet Style) -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+             <!-- Card 1 -->
+             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col justify-center">
+                 <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-3">${ICONS.PieChart}</div>
+                 <p class="text-xs sm:text-sm text-gray-500 font-medium">ผู้แนะนำสูงสุด</p>
+                 <p class="text-lg sm:text-xl font-bold text-gray-800 truncate" title="${topRef.name}">${topRef.name}</p>
+                 <p class="text-xs text-gray-400 mt-1">${topRef.count} คน</p>
+             </div>
+             <!-- Card 2 -->
+             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col justify-center">
+                 <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-3">${ICONS.FileText}</div>
+                 <p class="text-xs sm:text-sm text-gray-500 font-medium">สาขายอดฮิต</p>
+                 <p class="text-lg sm:text-xl font-bold text-gray-800 truncate" title="${topBranch}">${topBranch}</p>
+             </div>
+             <!-- Card 3 -->
+             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col justify-center">
+                 <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center mb-3">${ICONS.Users}</div>
+                 <p class="text-xs sm:text-sm text-gray-500 font-medium">ตำแหน่งยอดฮิต</p>
+                 <p class="text-lg sm:text-xl font-bold text-gray-800 truncate" title="${topPosition}">${topPosition}</p>
+             </div>
+             <!-- Card 4 -->
+             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col justify-center">
+                 <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center mb-3">${ICONS.Clock}</div>
+                 <p class="text-xs sm:text-sm text-gray-500 font-medium">รอสัมภาษณ์/รอเริ่มงาน</p>
+                 <p class="text-lg sm:text-xl font-bold text-gray-800 truncate">${pendingWork} <span class="text-sm font-normal text-gray-500">คน</span></p>
+             </div>
+          </div>
+
+          <!-- Charts Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 pb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">ตำแหน่งงานที่สนใจ</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortedPositions, {text:'text-indigo-600', bg:'bg-indigo-500'})}</div></div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สาขาที่ต้องการสมัคร</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortedBranches, {text:'text-emerald-600', bg:'bg-emerald-500'})}</div></div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col max-h-[400px]"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สถิติผู้แนะนำ</h3><div class="space-y-4 flex-1 overflow-auto pr-2">${renderBars(sortMap(refC), {text:'text-amber-600', bg:'bg-amber-500'})}</div></div>
             <div class="space-y-4 sm:space-y-6 flex flex-col">
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สัดส่วนช่วงอายุ</h3><div class="space-y-4">${renderAges()}</div></div>
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 flex-1"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สถานะผู้สมัคร</h3><div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">${renderStatus()}</div></div>
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สัดส่วนช่วงอายุ</h3><div class="space-y-4">${renderAges()}</div></div>
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex-1"><h3 class="font-bold text-gray-800 mb-4 border-b pb-2">สถานะผู้สมัคร</h3><div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">${renderStatus()}</div></div>
             </div>
           </div>
         </div>
@@ -1424,151 +1962,6 @@
       }
     };
 
-    // --- Leaderboard View (กระดานผู้นำ) ---
-    function renderLeaderboard(container) {
-      const fMonth = STATE.leaderboard.month; // "YYYY-MM"
-      
-      const stats = {};
-      STATE.candidates.forEach(c => {
-         const rCode = c.referrerCode;
-         if(!rCode || rCode === '-') return;
-         
-         if(!stats[rCode]) {
-            const u = STATE.users.find(x => String(x.empCode).toUpperCase() === String(rCode).toUpperCase());
-            stats[rCode] = { name: u ? u.name : 'พนักงาน', code: rCode, count: 0, commission: 0 };
-         }
-
-         // 1. นับยอดแนะนำ (ดูจากประทับเวลาว่าอยู่ในเดือนที่เลือกหรือไม่)
-         let cMonth = '';
-         const datePart = (c.timestamp || '').split(' ')[0];
-         if (datePart.includes('-')) {
-             cMonth = datePart.substring(0,7); // YYYY-MM
-         } else if (datePart.includes('/')) {
-             const p = datePart.split('/'); // DD/MM/YYYY
-             if (p.length === 3) cMonth = `${p[2]}-${p[1].padStart(2, '0')}`;
-         }
-         
-         if (cMonth === fMonth) {
-             stats[rCode].count += 1;
-         }
-
-         // 2. นับยอดคอมมิชชั่น (ดูจากประวัติการทำจ่ายที่จ่ายในเดือนที่เลือก)
-         if (Array.isArray(c.paymentHistory)) {
-             c.paymentHistory.forEach(ph => {
-                 let pMonth = '';
-                 if (ph.date && ph.date.includes('-')) {
-                     pMonth = ph.date.substring(0,7);
-                 }
-                 if (pMonth === fMonth) {
-                     stats[rCode].commission += Number(ph.amount) || 0;
-                 }
-             });
-         }
-      });
-      
-      const arr = Object.values(stats);
-      const topRef = [...arr].sort((a,b) => b.count - a.count).filter(x => x.count > 0).slice(0, 10);
-      const topEarn = [...arr].sort((a,b) => b.commission - a.commission).filter(x => x.commission > 0).slice(0, 10);
-
-      const renderItem = (item, index, type) => {
-          let rankClass = "text-gray-500 font-bold";
-          let bgClass = "";
-          let badge = "";
-          
-          if (index === 0) { rankClass = "text-yellow-600 text-xl font-extrabold"; bgClass = "bg-yellow-50/60 border-l-4 border-yellow-400"; badge = "🥇"; } 
-          else if (index === 1) { rankClass = "text-gray-400 text-lg font-bold"; bgClass = "bg-gray-50 border-l-4 border-gray-300"; badge = "🥈"; } 
-          else if (index === 2) { rankClass = "text-amber-700 text-lg font-bold"; bgClass = "bg-orange-50/40 border-l-4 border-orange-300"; badge = "🥉"; } 
-          else { rankClass = "text-gray-400 font-medium"; badge = `${index + 1}`; bgClass = "border-l-4 border-transparent"; }
-
-          const valStr = type === 'count' ? `${item.count} คน` : `฿${item.commission.toLocaleString()}`;
-          const valColor = type === 'count' ? 'text-indigo-600' : 'text-green-600';
-
-          return `
-          <li class="flex items-center justify-between p-4 hover:bg-gray-100 transition-colors ${bgClass}">
-              <div class="flex items-center gap-4">
-                  <div class="w-8 text-center ${rankClass}">${badge}</div>
-                  <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">${item.name.charAt(0)}</div>
-                      <div>
-                          <p class="font-bold text-gray-800 text-sm sm:text-base">${item.name}</p>
-                          <p class="text-xs text-gray-500">รหัส: ${item.code}</p>
-                      </div>
-                  </div>
-              </div>
-              <div class="font-bold ${valColor} text-lg">
-                  ${valStr}
-              </div>
-          </li>
-          `;
-      };
-
-      const topRefHTML = topRef.length > 0 ? topRef.map((item, i) => renderItem(item, i, 'count')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการแนะนำในเดือนนี้</li>';
-      const topEarnHTML = topEarn.length > 0 ? topEarn.map((item, i) => renderItem(item, i, 'comm')).join('') : '<li class="p-8 text-center text-gray-400">ไม่มีข้อมูลการจ่ายค่าคอมมิชชั่นในเดือนนี้</li>';
-
-      container.innerHTML = `
-        <div class="p-4 sm:p-6 max-w-5xl mx-auto h-full overflow-auto pb-20">
-           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-              <div>
-                 <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">${ICONS.Trophy} กระดานผู้นำ (Leaderboard)</h2>
-                 <p class="text-sm text-gray-500">จัดอันดับยอดแนะนำและรายได้ประจำเดือน</p>
-              </div>
-              <div class="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-gray-200 w-full sm:w-auto">
-                 <label class="text-sm font-medium text-gray-600 pl-2">เลือกเดือน:</label>
-                 <input type="month" value="${fMonth}" onchange="updateLeaderboardMonth(this.value)" class="border-none bg-gray-50 p-2 rounded text-sm font-bold text-indigo-700 focus:ring-0 cursor-pointer flex-1">
-              </div>
-           </div>
-
-           <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2 shadow-sm">
-             <span>💡 <strong>Tip:</strong> หากต้องการดูข้อมูลทดสอบที่มีในระบบ ลองเปลี่ยนเดือนเป็น <strong>ตุลาคม หรือ พฤศจิกายน 2023</strong> ดูนะครับ</span>
-           </div>
-
-           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <!-- Top Referrers -->
-              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                 <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white flex justify-between items-center shadow-inner">
-                    <div class="flex items-center gap-3">
-                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.Users}</div>
-                       <div>
-                         <h3 class="font-bold text-lg leading-tight">นักแนะนำยอดเยี่ยม</h3>
-                         <p class="text-xs text-blue-100">เรียงตามจำนวนคนที่แนะนำมาได้</p>
-                       </div>
-                    </div>
-                 </div>
-                 <div class="p-0 flex-1 bg-gray-50/30">
-                    <ul class="divide-y divide-gray-100">
-                       ${topRefHTML}
-                    </ul>
-                 </div>
-              </div>
-
-              <!-- Top Earners -->
-              <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                 <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-white flex justify-between items-center shadow-inner">
-                    <div class="flex items-center gap-3">
-                       <div class="p-2 bg-white/20 rounded-lg">${ICONS.DollarSign}</div>
-                       <div>
-                         <h3 class="font-bold text-lg leading-tight">เศรษฐีประจำเดือน</h3>
-                         <p class="text-xs text-orange-100">เรียงตามยอดค่าคอมมิชชั่นที่ได้รับแล้ว</p>
-                       </div>
-                    </div>
-                 </div>
-                 <div class="p-0 flex-1 bg-gray-50/30">
-                    <ul class="divide-y divide-gray-100">
-                       ${topEarnHTML}
-                    </ul>
-                 </div>
-              </div>
-           </div>
-        </div>
-      `;
-    }
-
-    window.updateLeaderboardMonth = (val) => {
-        STATE.leaderboard.month = val;
-        renderCurrentView();
-    };
-
-
     // --- Commission View ---
     function renderCommission(container) {
       const data = {};
@@ -1928,9 +2321,177 @@
       }
     };
 
+    // =========================================================================
+    // LIVE CHAT WIDGET LOGIC
+    // =========================================================================
+    window.toggleChat = () => {
+      STATE.chat.isOpen = !STATE.chat.isOpen;
+      const win = document.getElementById('chat-window');
+      if (STATE.chat.isOpen) {
+        win.classList.remove('hidden');
+        renderChatMessages();
+        setTimeout(() => {
+          const cb = document.getElementById('chat-body');
+          if (cb) cb.scrollTop = cb.scrollHeight;
+        }, 50);
+      } else {
+        win.classList.add('hidden');
+      }
+    };
+
+    window.renderChatMessages = () => {
+      const cb = document.getElementById('chat-body');
+      if (!cb) return;
+      
+      if (STATE.chat.messages.length === 0) {
+        cb.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10">ยังไม่มีข้อความ เริ่มต้นสนทนาได้เลย!</div>';
+        return;
+      }
+
+      cb.innerHTML = STATE.chat.messages.map(msg => {
+        const isMe = STATE.currentUser && msg.senderUsername === STATE.currentUser.username;
+        const timeParts = msg.timestamp.split(' ');
+        const time = timeParts.length > 1 ? timeParts[1].substring(0, 5) : '';
+        
+        if (isMe) {
+          return `
+            <div class="flex flex-col items-end mb-3">
+              <div class="bg-indigo-600 text-white px-3 py-2 rounded-2xl rounded-br-sm shadow-sm max-w-[85%] text-sm break-words">
+                ${msg.message}
+              </div>
+              <span class="text-[10px] text-gray-400 mt-1">${time}</span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="flex flex-col items-start mb-3">
+              <span class="text-[10px] text-gray-500 mb-1 ml-1">${msg.senderName}</span>
+              <div class="bg-white border border-gray-200 text-gray-800 px-3 py-2 rounded-2xl rounded-bl-sm shadow-sm max-w-[85%] text-sm break-words">
+                ${msg.message}
+              </div>
+              <span class="text-[10px] text-gray-400 mt-1">${time}</span>
+            </div>
+          `;
+        }
+      }).join('');
+    };
+
+    window.sendChatMessage = async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text || !STATE.currentUser) return;
+
+      const newMsg = {
+        id: STATE.chat.messages.length + 1,
+        timestamp: new Date().toLocaleString('th-TH', { hour12: false }).replace(',', ''),
+        senderUsername: STATE.currentUser.username,
+        senderName: STATE.currentUser.name,
+        message: text
+      };
+
+      // 📌 อัปเดตหน้าจอแชททันที (Optimistic Update)
+      STATE.chat.messages.push(newMsg);
+      input.value = '';
+      renderChatMessages();
+      
+      const cb = document.getElementById('chat-body');
+      setTimeout(() => { if (cb) cb.scrollTop = cb.scrollHeight; }, 10);
+
+      // 📌 ส่งขึ้น Google Sheets Backend
+      if (GOOGLE_SHEET_API_URL) {
+        try {
+          await fetch(GOOGLE_SHEET_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ type: 'chat_messages', action: 'add', data: newMsg }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          });
+        } catch(err) { console.error("Chat send failed", err); }
+      }
+    };
+
+    window.startChatPolling = () => {
+      if (STATE.chat.intervalId) clearInterval(STATE.chat.intervalId);
+      
+      // 📌 ดึงข้อความแชทใหม่ทุกๆ 15 วินาที
+      STATE.chat.intervalId = setInterval(async () => {
+        if (GOOGLE_SHEET_API_URL && STATE.currentUser) {
+          try {
+            const res = await fetch(GOOGLE_SHEET_API_URL + '?sheet=chat_messages');
+            const data = await res.json();
+            if (Array.isArray(data) && !data.error) {
+              const oldLength = STATE.chat.messages.length;
+              STATE.chat.messages = data;
+              
+              if (STATE.chat.isOpen) {
+                const cb = document.getElementById('chat-body');
+                // เช็คว่าผู้ใช้อยู่ด้านล่างสุดของแชทหรือไม่ ถ้าใช่ให้เลื่อนลงให้อัตโนมัติเมื่อมีข้อความใหม่
+                const isAtBottom = cb.scrollHeight - cb.scrollTop <= cb.clientHeight + 50;
+                renderChatMessages();
+                if (isAtBottom && data.length > oldLength) {
+                  setTimeout(() => { cb.scrollTop = cb.scrollHeight; }, 10);
+                }
+              }
+            }
+          } catch(e) {}
+        }
+      }, 15000); 
+    };
+
+    window.stopChatPolling = () => {
+      if (STATE.chat.intervalId) {
+        clearInterval(STATE.chat.intervalId);
+        STATE.chat.intervalId = null;
+      }
+    };
+
     // --- Bootstrap ---
     initApp();
 
   </script>
+
+  <!-- ========================================================================= -->
+  <!-- 📌 LIVE CHAT WIDGET (ส่วนติดด้านล่างหน้าจอ) -->
+  <!-- ========================================================================= -->
+  <div id="chat-widget" class="fixed bottom-4 right-4 z-[60] flex flex-col items-end hidden-view">
+    
+    <!-- หน้าต่างสนทนา -->
+    <div id="chat-window" class="bg-white w-[300px] sm:w-[350px] h-[450px] rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] mb-4 flex-col hidden border border-gray-200 overflow-hidden transform transition-all origin-bottom-right">
+      
+      <!-- Chat Header -->
+      <div class="bg-indigo-600 px-4 py-3 flex justify-between items-center text-white shadow-md z-10">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border border-green-200"></div>
+          <div>
+            <h3 class="font-bold text-sm leading-tight">ห้องสนทนา PBD Group</h3>
+            <p class="text-[10px] text-indigo-200">พูดคุยกับแอดมินและพนักงานทุกคน</p>
+          </div>
+        </div>
+        <button onclick="toggleChat()" class="text-indigo-200 hover:text-white transition-colors bg-indigo-700/50 hover:bg-indigo-700 rounded-full w-7 h-7 flex items-center justify-center">&times;</button>
+      </div>
+      
+      <!-- Chat Messages Body -->
+      <div id="chat-body" class="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col">
+        <!-- Messages will be injected here via JavaScript -->
+      </div>
+      
+      <!-- Chat Input Area -->
+      <form onsubmit="sendChatMessage(event)" class="bg-white p-3 border-t border-gray-200 flex gap-2 items-center">
+        <input type="text" id="chat-input" placeholder="พิมพ์ข้อความที่นี่..." autocomplete="off" class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-transparent transition-all">
+        <button type="submit" class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-colors shadow-sm flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </form>
+
+    </div>
+
+    <!-- ปุ่มเปิดแชท -->
+    <button onclick="toggleChat()" class="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-700 hover:scale-105 transition-transform relative group border-[3px] border-white">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+      <!-- Tooltip -->
+      <span class="absolute right-full mr-4 bg-gray-800 text-white text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap shadow-lg">คุยกับแอดมิน / พนักงาน</span>
+    </button>
+  </div>
+
 </body>
 </html>
