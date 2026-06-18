@@ -1584,7 +1584,8 @@
           );
         };
 
-        const ReportView = ({ expenses, branches, companyName }) => {
+        const ReportView = ({ expenses, branches, companyName, user }) => {
+          const { showAlert } = useContext(UIContext);
           const [userMap, setUserMap] = useState({});
           const [users, setUsers] = useState([]);
           const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -1592,6 +1593,12 @@
           const [filterBranch, setFilterBranch] = useState('ALL');
           const [filterUser, setFilterUser] = useState('ALL');
           const [initialBudget, setInitialBudget] = useState('');
+          
+          const [editingExpense, setEditingExpense] = useState(null);
+          const [editedItems, setEditedItems] = useState([]);
+          const [updating, setUpdating] = useState(false);
+
+          const canEdit = user && (user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXCLUSIVE);
 
           useEffect(() => {
             const now = new Date();
@@ -1634,7 +1641,7 @@
                        const branchName = itemBranchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === itemBranchId)?.name || '-');
 
                        flat.push({ 
-                           id: e.id + '-' + item.id, runNumber: e.runNumber, date: item.date, description: item.description, 
+                           id: e.id + '-' + item.id, expenseId: e.id, runNumber: e.runNumber, date: item.date, description: item.description, 
                            category: item.category, amount: parseFloat(item.amount), status: statusObj.label, statusColor: statusObj.color, 
                            branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status
                        }); 
@@ -1646,7 +1653,7 @@
                    const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || '-');
 
                    flat.push({ 
-                       id: e.id, runNumber: e.runNumber, date: e.date ? new Date(e.date.seconds * 1000).toISOString().split('T')[0] : '-', 
+                       id: e.id, expenseId: e.id, runNumber: e.runNumber, date: e.date ? new Date(e.date.seconds * 1000).toISOString().split('T')[0] : '-', 
                        description: e.description, category: e.category, amount: parseFloat(e.amount), status: statusObj.label, 
                        statusColor: statusObj.color, branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status
                    }); 
@@ -1793,10 +1800,11 @@
                               <th className="p-4 text-sm font-semibold text-gray-600 text-right">จำนวนเงิน</th>
                               <th className="p-4 text-sm font-semibold text-gray-600 text-center">สถานะ</th>
                               <th className="p-4 text-sm font-semibold text-gray-600 text-center">ผู้อนุมัติ</th>
+                              {canEdit && <th className="p-4 text-sm font-semibold text-gray-600 text-center w-20">จัดการ</th>}
                            </tr>
                         </thead>
                         <tbody className="divide-y">
-                           {reportData.length === 0 ? (<tr><td colSpan="7" className="p-8 text-center text-gray-400">ไม่พบข้อมูลตามเงื่อนไข</td></tr>) : reportData.map((item, idx) => (
+                           {reportData.length === 0 ? (<tr><td colSpan={canEdit ? "8" : "7"} className="p-8 text-center text-gray-400">ไม่พบข้อมูลตามเงื่อนไข</td></tr>) : reportData.map((item, idx) => (
                               <tr key={idx} className="hover:bg-gray-50">
                                  <td className="p-4 text-sm text-gray-600 whitespace-nowrap"><div>{item.date}</div><div className="text-[10px] md:text-xs text-blue-500 font-bold">{item.runNumber}</div></td>
                                  <td className="p-4 text-sm font-medium text-gray-800"><div className="w-48 truncate">{item.description}</div></td>
@@ -1805,12 +1813,99 @@
                                  <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{item.amount.toLocaleString()}</td>
                                  <td className="p-4 text-center"><span className={`inline-block px-2 py-0.5 rounded text-[10px] md:text-xs font-semibold ${item.statusColor}`}>{item.status}</span></td>
                                  <td className="p-4 text-xs md:text-sm text-center text-gray-600">{item.approver}</td>
+                                 {canEdit && (
+                                     <td className="p-4 text-center">
+                                         <button onClick={() => {
+                                             const expense = expenses.find(ex => ex.id === item.expenseId);
+                                             if(expense) {
+                                                 setEditingExpense(expense);
+                                                 setEditedItems(JSON.parse(JSON.stringify(expense.items || [])));
+                                             }
+                                         }} className="text-blue-600 hover:text-blue-800 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 p-1.5 rounded-lg shadow-sm transition-all" title="แก้ไขรายการนี้">
+                                             <Edit size={14} />
+                                         </button>
+                                     </td>
+                                 )}
                               </tr>
                            ))}
                         </tbody>
                      </table>
                   </div>
                </div>
+               
+               {/* Modal สำหรับการแก้ไขรายการ */}
+               {editingExpense && (
+                  <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setEditingExpense(null)}>
+                      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                          <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center shrink-0">
+                              <div className="flex items-center gap-2 text-blue-700 font-bold text-lg">
+                                  <Edit size={22} /> แก้ไขรายการ (เลขที่ {editingExpense.runNumber})
+                              </div>
+                              <button onClick={() => setEditingExpense(null)} className="text-gray-400 hover:text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors"><X size={18}/></button>
+                          </div>
+                          <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
+                               {editedItems.length === 0 && <div className="text-center text-gray-500 text-sm py-4">ไม่มีรายการย่อย (กรุณาเพิ่มรายการ)</div>}
+                               {editedItems.map((item, idx) => (
+                                   <div key={idx} className="flex flex-col p-4 md:p-5 border border-gray-200 rounded-xl bg-white shadow-sm gap-3 relative">
+                                       <button onClick={() => { const newItems = [...editedItems]; newItems.splice(idx, 1); setEditedItems(newItems); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-md transition-colors" title="ลบรายการนี้"><Trash2 size={16}/></button>
+                                       <div className="flex flex-col lg:flex-row gap-4 lg:pr-10">
+                                           <div className="flex-1 space-y-3">
+                                               <div>
+                                                   <label className="text-[11px] text-gray-500 font-bold mb-1 block">รายละเอียดรายการ</label>
+                                                   <input className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.description} onChange={ev => { const newItems = [...editedItems]; newItems[idx].description = ev.target.value; setEditedItems(newItems); }} placeholder="ระบุรายละเอียด..." />
+                                               </div>
+                                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                   <div>
+                                                       <label className="text-[11px] text-gray-500 font-bold mb-1 block">หมวดหมู่</label>
+                                                       <select className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.category} onChange={ev => { const newItems = [...editedItems]; newItems[idx].category = ev.target.value; setEditedItems(newItems); }}>
+                                                           {EXPENSE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.group} • {c.name}</option>)}
+                                                       </select>
+                                                   </div>
+                                                   <div>
+                                                       <label className="text-[11px] text-blue-500 font-bold mb-1 block">สาขา</label>
+                                                       <select className="w-full border border-blue-300 bg-blue-50 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={item.branchId || editingExpense.branchId} onChange={ev => { const newItems = [...editedItems]; newItems[idx].branchId = ev.target.value; setEditedItems(newItems); }}>
+                                                           <option value="HEADQUARTER">สำนักงานใหญ่</option>
+                                                           {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                       </select>
+                                                   </div>
+                                               </div>
+                                           </div>
+                                           <div className="w-full lg:w-48 flex flex-col justify-end">
+                                               <label className="text-[11px] text-gray-500 font-bold mb-1 block">จำนวนเงิน (บาท)</label>
+                                               <input type="number" step="0.01" min="0" className="w-full border border-blue-300 p-2 md:p-2.5 rounded-lg text-sm text-right font-bold text-blue-700 bg-blue-50/30 focus:ring-2 focus:ring-blue-400 outline-none" value={item.amount} onChange={ev => { const newItems = [...editedItems]; newItems[idx].amount = ev.target.value; setEditedItems(newItems); }} placeholder="0.00" />
+                                           </div>
+                                       </div>
+                                   </div>
+                               ))}
+                               <div className="flex justify-center mt-4">
+                                   <button onClick={() => setEditedItems([...editedItems, { id: Date.now(), description: '', category: 'fixed_other', amount: '', branchId: editingExpense.branchId || 'HEADQUARTER', date: new Date().toISOString().split('T')[0] }])} className="flex items-center gap-2 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 px-5 py-3 rounded-xl font-bold transition-colors shadow-sm">
+                                       <PlusCircle size={18} /> เพิ่มรายการย่อยใหม่
+                                   </button>
+                               </div>
+                          </div>
+                          <div className="px-6 py-4 border-t bg-white flex justify-end gap-3 shrink-0">
+                               <button onClick={() => setEditingExpense(null)} className="px-6 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                               <button onClick={async () => {
+                                   if (editedItems.some(i => !i.description.trim() || !i.amount)) return showAlert('กรุณากรอก รายละเอียด และ จำนวนเงิน ให้ครบทุกรายการ', 'error');
+                                   if (editedItems.length === 0) return showAlert('ต้องมีรายการย่อยอย่างน้อย 1 รายการ', 'error');
+                                   setUpdating(true);
+                                   try {
+                                       const newTotal = editedItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+                                       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', editingExpense.id), {
+                                           items: editedItems,
+                                           amount: newTotal
+                                       });
+                                       setEditingExpense(null);
+                                       showAlert('บันทึกการแก้ไขสำเร็จ', 'success');
+                                   } catch (err) { showAlert('เกิดข้อผิดพลาด: ' + err.message, 'error'); }
+                                   setUpdating(false);
+                               }} disabled={updating} className="px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-colors disabled:opacity-50 flex items-center gap-2">
+                                   {updating ? 'กำลังบันทึก...' : <><CheckCircle size={18}/> บันทึกการเปลี่ยนแปลง</>}
+                               </button>
+                          </div>
+                      </div>
+                  </div>
+               )}
             </div>
           );
         };
@@ -2203,7 +2298,7 @@
               case 'request': return <RequestForm user={user} setView={setView} branches={branches} expenses={expenses} />;
               case 'history': return <HistoryView expenses={expenses} getBranchName={getBranchName} user={user} branches={branches} />;
               case 'approvals': return <ApprovalQueue expenses={expenses} user={user} branches={branches} />;
-              case 'reports': return <ReportView expenses={expenses} branches={branches} companyName={companyName} />;
+              case 'reports': return <ReportView expenses={expenses} branches={branches} companyName={companyName} user={user} />;
               case 'branches': return <BranchManager branches={branches} />;
               case 'users': return <EmployeeManager branches={branches} />;
               case 'settings': return <SettingsView user={user} />;
