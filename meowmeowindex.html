@@ -61,6 +61,7 @@
           getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc,
           serverTimestamp, setDoc, getDoc, runTransaction
         } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+        import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js';
 
         const { useState, useEffect, useMemo, createContext, useContext } = React;
         const { 
@@ -124,6 +125,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
         const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
 
         const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#ff7300', '#009688', '#9c27b0'];
@@ -218,6 +220,32 @@
           const data = await response.json();
           if (data.success) return data.data.url;
           throw new Error(data.error?.message || "อัปโหลดรูปไม่สำเร็จ");
+        };
+
+        // ฟังก์ชันหลักสำหรับอัปโหลดรูป (ปรับให้ความสำคัญกับ Imgbb เป็นอันดับแรก)
+        const uploadImageToStorage = async (base64String, path, settings) => {
+            if (!base64String || !base64String.startsWith('data:image')) return base64String;
+            
+            // 1. ถ้ามีการตั้งค่า Imgbb API Key ไว้ ให้ใช้ Imgbb ทันที (ไม่ต้องพึ่งพา Firebase Storage)
+            if (settings?.imgbbApiKey) {
+                try {
+                    return await uploadImageToImgbb(base64String, settings.imgbbApiKey);
+                } catch (imgbbError) {
+                    console.error("Imgbb upload failed:", imgbbError);
+                }
+            }
+            
+            // 2. ถ้าไม่ได้ตั้งค่า Imgbb ไว้ ค่อยลองใช้ Firebase Storage เผื่อไว้
+            try {
+                const storageRef = ref(storage, path);
+                await uploadString(storageRef, base64String, 'data_url');
+                return await getDownloadURL(storageRef);
+            } catch (fbError) {
+                console.warn("Firebase Storage failed:", fbError);
+                
+                // 3. ถ้าอัปโหลดไม่ได้เลยจริงๆ ให้คืนค่า Base64 กลับไปเก็บแบบเดิม
+                return base64String;
+            }
         };
 
         const sendLineMessage = async (targetLineId, messagesArray, token, scriptUrl = '', setLogs = () => {}, showAlert) => {
@@ -372,7 +400,7 @@
           return flexMessage;
         };
 
-        const compressImage = (file, maxWidth = 1200, quality = 0.7) => {
+        const compressImage = (file, maxWidth = 800, initialQuality = 0.6) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -391,7 +419,19 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
+                        
+                        let quality = initialQuality;
+                        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        let approxSize = dataUrl.length * 0.75;
+                        
+                        // บีบอัดลงไปเรื่อยๆ ถ้ารูปยังใหญ่กว่า 150KB (เพื่อให้แนบได้หลายรูป)
+                        while (approxSize > 150000 && quality > 0.1) {
+                             quality -= 0.1;
+                             dataUrl = canvas.toDataURL('image/jpeg', quality);
+                             approxSize = dataUrl.length * 0.75;
+                        }
+                        
+                        resolve(dataUrl);
                     };
                     img.onerror = (err) => reject(err);
                 };
@@ -801,7 +841,7 @@
           const { showAlert, showConfirm } = useContext(UIContext);
           const [items, setItems] = useState([]);
           const [selectedGroup, setSelectedGroup] = useState('ค่าใช้จ่ายคงที่');
-          const [currentItem, setCurrentItem] = useState({ amount: '', category: 'fixed_car', description: '', date: new Date().toISOString().split('T')[0], receipt: null, branchId: user.branchId || 'HEADQUARTER', aHash: '', uniqueDigits: [], uniqueThai: [], refNumbers: [], extData: { dates: [], times: [], amounts: [], keywords: [] } });
+          const [currentItem, setCurrentItem] = useState({ amount: '', category: 'fixed_car', description: '', date: new Date().toISOString().split('T')[0], receipt: null, receiptSize: 0, branchId: user.branchId || 'HEADQUARTER', aHash: '', uniqueDigits: [], uniqueThai: [], refNumbers: [], extData: { dates: [], times: [], amounts: [], keywords: [] } });
           const [bankInfo, setBankInfo] = useState({ bank: 'promptpay', accountName: user.name || '', accountNumber: '' });
           const [loading, setLoading] = useState(false);
           const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -810,6 +850,7 @@
           const [viewImage, setViewImage] = useState(null);
 
           const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+          const totalReceiptSize = items.reduce((sum, item) => sum + parseFloat(item.receiptSize || 0), 0).toFixed(1);
           const isAutoApprove = user.role === ROLES.MANAGER;
           
           const isFormValid = useMemo(() => {
@@ -889,7 +930,8 @@
               }
               setIsAnalyzing(true);
               try {
-                 const base64Data = await compressImage(file, 1200, 0.7);
+                 const base64Data = await compressImage(file, 800, 0.6);
+                 const sizeInKB = (base64Data.length * 0.75 / 1024).toFixed(1);
                  
                  const aHash = await generateAHash(base64Data);
                  const { data: { text } } = await window.Tesseract.recognize(base64Data, 'tha+eng');
@@ -1020,7 +1062,8 @@
                  const applyReceipt = () => {
                      setCurrentItem(prev => ({ 
                          ...prev, 
-                         receipt: base64Data, 
+                         receipt: base64Data, // ยังคงพรีวิวด้วย Base64 ไปก่อน (เก็บจริงเป็นลิงก์ตอนกดบันทึก)
+                         receiptSize: sizeInKB,
                          aHash: aHash,
                          uniqueDigits: uniqueDigits,
                          uniqueThai: uniqueThai,
@@ -1041,8 +1084,9 @@
                   console.error("Analysis Error:", err);
                   // ถ้า AI พัง ให้ลองบันทึกรูปปกติแบบไม่วิเคราะห์ (แต่ยังถูกย่อขนาด)
                   try {
-                      const fallbackBase64 = await compressImage(file, 1200, 0.7);
-                      setCurrentItem(prev => ({ ...prev, receipt: fallbackBase64 }));
+                      const fallbackBase64 = await compressImage(file, 800, 0.6);
+                      const fallbackSizeInKB = (fallbackBase64.length * 0.75 / 1024).toFixed(1);
+                      setCurrentItem(prev => ({ ...prev, receipt: fallbackBase64, receiptSize: fallbackSizeInKB }));
                   } catch (e) {
                       showAlert("ไม่สามารถประมวลผลรูปภาพได้", "error");
                   }
@@ -1055,7 +1099,7 @@
             e.preventDefault(); 
             if (!currentItem.amount || !currentItem.description.trim() || !currentItem.date) return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน');
             setItems([...items, { ...currentItem, id: Date.now() }]);
-            setCurrentItem(prev => ({ ...prev, amount: '', description: '', receipt: null, aHash: '', uniqueDigits: [], uniqueThai: [], refNumbers: [], extData: { dates: [], times: [], amounts: [], keywords: [] } }));
+            setCurrentItem(prev => ({ ...prev, amount: '', description: '', receipt: null, receiptSize: 0, aHash: '', uniqueDigits: [], uniqueThai: [], refNumbers: [], extData: { dates: [], times: [], amounts: [], keywords: [] } }));
             const fileInput = document.getElementById('receipt-upload');
             if (fileInput) fileInput.value = '';
           };
@@ -1088,11 +1132,25 @@
 
             setLoading(true);
             try {
-              const runNumber = await generateExpenseId(user.branchId || 'HEADQUARTER'); 
+              // 1. ดึงข้อมูล Settings เผื่อต้องใช้ Imgbb สำรอง
+              const settingsSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'));
+              const settings = settingsSnap.exists() ? settingsSnap.data() : null;
 
+              // 2. อัปโหลดรูปภาพใบเสร็จทั้งหมดไปเก็บไว้ที่ Storage (แล้วเปลี่ยน base64 ให้เป็น url)
+              const processedItems = await Promise.all(items.map(async (item, index) => {
+                  if (item.receipt && item.receipt.startsWith('data:image/')) {
+                      const path = `expenses/${appId}/receipts/${Date.now()}_${index}.jpg`;
+                      const url = await uploadImageToStorage(item.receipt, path, settings);
+                      return { ...item, receipt: url }; // แทนที่ Base64 ด้วย URL
+                  }
+                  return item;
+              }));
+
+              const runNumber = await generateExpenseId(user.branchId || 'HEADQUARTER'); 
               const initialStatus = isAutoApprove ? 'waiting_transfer' : 'pending';
+              
               const expenseData = {
-                  runNumber, amount: totalAmount, description: `ใบเบิกค่าใช้จ่าย (${items.length} รายการ)`, items: items, 
+                  runNumber, amount: totalAmount, description: `ใบเบิกค่าใช้จ่าย (${items.length} รายการ)`, items: processedItems, 
                   date: new Date(), status: initialStatus, userId: user.uid, userName: user.name, branchId: user.branchId || 'HEADQUARTER', 
                   createdBy: user.uid, createdAt: serverTimestamp(), category: 'mixed', targetApproverId: isAutoApprove ? user.uid : selectedApproverId, 
                   bankDetails: { 
@@ -1101,16 +1159,22 @@
                   }
               };
 
+              // ตรวจสอบขนาดรวมของใบเบิกเพื่อความปลอดภัย (กรณี Storage ล่มทั้งหมด แล้วโค้ด fallback เป็น Base64)
+              const approxSize = JSON.stringify(expenseData).length;
+              if (approxSize > 900000) { 
+                 setLoading(false);
+                 return showAlert(`ระบบไม่สามารถฝากรูปไว้ภายนอกได้ (Firebase Storage อาจไม่ได้ถูกตั้งค่าไว้) และข้อมูลบิลมีขนาดใหญ่เกินไป ทำให้บันทึกแบบเดิมไม่ได้\n\nคำแนะนำ:\n1. ไปเปิดใช้งาน Storage บน Firebase\n2. หรือไปที่ "ตั้งค่า" แล้วใส่ Imgbb API Key สำรองไว้ครับ`, 'error');
+              }
+
               if (isAutoApprove) {
                   expenseData.approverId = user.uid;
                   expenseData.approvedAt = serverTimestamp();
               }
 
+              // 3. บันทึกข้อมูลใบเบิกลง Firestore (รอบนี้จะเล็กมากๆ เพราะเก็บแค่ URL)
               await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), expenseData);
               
-              const settingsSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'));
-              const settings = settingsSnap.data();
-              
+              // 4. แจ้งเตือน LINE (ถ้ามี)
               if (settings?.lineToken && !isAutoApprove) {
                  const targetUser = approvers.find(u => u.id === selectedApproverId);
                  if (targetUser && targetUser.lineUserId) {
@@ -1121,7 +1185,10 @@
               }
               showAlert(`บันทึกใบเบิกเรียบร้อยแล้ว เลขที่ ${runNumber}`, 'success'); 
               setView('history');
-            } catch (error) { console.error(error); showAlert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message); }
+            } catch (error) { 
+              console.error(error); 
+              showAlert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message); 
+            }
             setLoading(false);
           };
 
@@ -1171,9 +1238,12 @@
                                     <input id="receipt-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={isAnalyzing}/>
                                 </label>
                                 {currentItem.receipt && !isAnalyzing && (
-                                    <div className="relative group shrink-0">
-                                        <img src={currentItem.receipt} className="h-10 w-10 object-cover rounded border" alt="Preview"/>
-                                        <button type="button" onClick={() => { setCurrentItem({...currentItem, receipt: null, aHash: '', uniqueDigits: [], uniqueThai: [], refNumbers: [], extData: { dates: [], times: [], amounts: [], keywords: [] } }); document.getElementById('receipt-upload').value = ''; }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"><X size={12}/></button>
+                                    <div className="relative group shrink-0 flex flex-col items-center gap-1">
+                                        <div className="relative">
+                                            <img src={currentItem.receipt} className="h-10 w-10 object-cover rounded border" alt="Preview"/>
+                                            <button type="button" onClick={() => { setCurrentItem({...currentItem, receipt: null, receiptSize: 0, aHash: '', uniqueDigits: [], uniqueThai: [], refNumbers: [], extData: { dates: [], times: [], amounts: [], keywords: [] } }); document.getElementById('receipt-upload').value = ''; }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"><X size={12}/></button>
+                                        </div>
+                                        <span className="text-[10px] text-blue-600 font-mono font-bold leading-none">{currentItem.receiptSize} KB</span>
                                     </div>
                                 )}
                             </div>
@@ -1203,9 +1273,12 @@
                                         <td className="p-4 text-right w-24">
                                             <div className="flex items-center justify-end gap-2">
                                                 {item.receipt && (
-                                                    <button onClick={(e) => { e.preventDefault(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 bg-white shadow-sm border rounded-lg p-1.5 active:scale-95" title="ดูรูปใบเสร็จ">
-                                                        <ImageIcon size={16} />
-                                                    </button>
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <button onClick={(e) => { e.preventDefault(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 bg-white shadow-sm border rounded-lg p-1.5 active:scale-95" title="ดูรูปใบเสร็จ">
+                                                            <ImageIcon size={16} />
+                                                        </button>
+                                                        {item.receiptSize && <span className="text-[9px] text-gray-500 font-mono font-bold leading-none whitespace-nowrap">{item.receiptSize} KB</span>}
+                                                    </div>
                                                 )}
                                                 <button onClick={() => handleRemoveItem(item.id)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm border rounded-lg p-1.5 active:scale-95" title="ลบรายการนี้">
                                                     <Trash2 size={16} />
@@ -1215,7 +1288,7 @@
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot className="bg-gray-50 border-t"><tr><td colSpan="2" className="p-4 text-right font-semibold text-gray-700">ยอดรวมทั้งใบ</td><td className="p-4 text-right font-bold text-blue-600 text-lg">฿{totalAmount.toLocaleString()}</td><td></td></tr></tfoot>
+                            <tfoot className="bg-gray-50 border-t"><tr><td colSpan="2" className="p-4 text-right font-semibold text-gray-700">ยอดรวมทั้งใบ {totalReceiptSize > 0 && <span className="text-xs text-gray-400 font-normal ml-2">(ขนาดรูปรวม: {totalReceiptSize} KB)</span>}</td><td className="p-4 text-right font-bold text-blue-600 text-lg">฿{totalAmount.toLocaleString()}</td><td></td></tr></tfoot>
                         </table>
                     </div>
                     <div className="p-6 bg-blue-50 border-t border-blue-100">
@@ -1352,7 +1425,7 @@
             if (file) {
               if (file.size > 10 * 1024 * 1024) return showAlert("ขนาดรูปภาพต้องไม่เกิน 10MB", 'error');
               try {
-                  const compressed = await compressImage(file, 1200, 0.7);
+                  const compressed = await compressImage(file, 800, 0.6);
                   setTransferSlip(compressed);
               } catch (err) {
                   console.error("Error compressing slip:", err);
@@ -1371,8 +1444,17 @@
                const expense = expenses.find(e => e.id === id);
                const updateData = { status: newStatus, approverId: user.uid, approvedAt: serverTimestamp() };
                
+               const settingsSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'));
+               const settings = settingsSnap.exists() ? settingsSnap.data() : null;
+               
+               let finalSlipUrl = transferSlip;
+
                if (newStatus === 'transferred' || newStatus === 'paid_cash') {
-                 if (newStatus === 'transferred' && transferSlip) updateData.transferSlip = transferSlip;
+                 if (newStatus === 'transferred' && transferSlip && transferSlip.startsWith('data:image/')) {
+                    const path = `slips/${appId}/${id}_${Date.now()}.jpg`;
+                    finalSlipUrl = await uploadImageToStorage(transferSlip, path, settings);
+                    updateData.transferSlip = finalSlipUrl;
+                 }
                  updateData.transferDate = serverTimestamp();
                }
                
@@ -1383,23 +1465,12 @@
                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id), updateData);
                
                if (expense) {
-                 const settingsSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'));
-                 const settings = settingsSnap.data();
                  const userSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', expense.userId));
                  const targetUser = userSnap.data();
                  
                  if (settings?.lineToken && targetUser?.lineUserId) {
-                    let uploadedImageUrl = null;
-                    if (newStatus === 'transferred' && transferSlip && settings.imgbbApiKey) {
-                       try {
-                          uploadedImageUrl = await uploadImageToImgbb(transferSlip, settings.imgbbApiKey);
-                       } catch (uploadErr) {
-                          console.error("Imgbb Upload Failed:", uploadErr);
-                       }
-                    }
-                    
                     const expenseForLine = { ...expense, rejectReason: updateData.rejectReason };
-                    const message = createExpenseFlexMessage(expenseForLine, newStatus, uploadedImageUrl || transferSlip, user.name, settings.companyName);
+                    const message = createExpenseFlexMessage(expenseForLine, newStatus, finalSlipUrl, user.name, settings.companyName);
                     await sendLineMessage(targetUser.lineUserId, [message], settings.lineToken, settings.scriptUrl, undefined, showAlert);
                  }
                }
@@ -2017,7 +2088,7 @@
                       <textarea rows="3" className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.lineToken} onChange={e => setSettings({...settings, lineToken: e.target.value})} placeholder="Channel Access Token (Long-lived)" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] md:text-xs font-black text-slate-500 ml-1 flex flex-wrap items-center gap-2">Imgbb API Key (ตัวช่วยแปลงรูปเข้า LINE) <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer" className="text-indigo-500 underline">ขอรับฟรีที่นี่</a></label>
+                      <label className="text-[10px] md:text-xs font-black text-slate-500 ml-1 flex flex-wrap items-center gap-2">Imgbb API Key (ตัวช่วยแปลงรูปเข้า LINE และสำรองกรณี Storage มีปัญหา) <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer" className="text-indigo-500 underline">ขอรับฟรีที่นี่</a></label>
                       <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.imgbbApiKey} onChange={e => setSettings({...settings, imgbbApiKey: e.target.value})} placeholder="ใส่ Imgbb API Key..." />
                     </div>
                     <div className="space-y-2">
