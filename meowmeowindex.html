@@ -749,13 +749,13 @@
                            <p className="font-medium text-gray-800 text-sm truncate">{e.description}</p>
                            <div className="flex items-center gap-2 mt-1">
                              <span className="text-[10px] text-blue-500 bg-blue-50 px-1 rounded font-mono shrink-0">{e.runNumber}</span>
-                             <span className="text-[10px] text-gray-500 shrink-0">{new Date(e.date?.seconds * 1000).toLocaleDateString('th-TH')}</span>
+                             <span className="text-[10px] text-gray-500 shrink-0">{e.date ? new Date(e.date?.seconds ? e.date.seconds * 1000 : e.date).toLocaleDateString('th-TH') : '-'}</span>
                            </div>
                          </div>
                          <div className="text-right shrink-0">
                            <p className="font-bold text-gray-800 text-sm">฿{parseFloat(e.amount).toLocaleString()}</p>
-                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${STATUS[e.status.toUpperCase()]?.color || 'bg-gray-100'}`}>
-                             {STATUS[e.status.toUpperCase()]?.label || e.status}
+                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${STATUS[(e.status || 'PENDING').toUpperCase()]?.color || 'bg-gray-100'}`}>
+                             {STATUS[(e.status || 'PENDING').toUpperCase()]?.label || e.status}
                            </span>
                          </div>
                        </div>
@@ -1311,13 +1311,13 @@
                         <React.Fragment key={e.id}>
                           <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}>
                             <td className="p-4 text-sm text-gray-600">
-                                <div>{e.date ? new Date(e.date.seconds * 1000).toLocaleDateString('th-TH') : '-'}</div>
+                                <div>{e.date ? new Date(e.date?.seconds ? e.date.seconds * 1000 : e.date).toLocaleDateString('th-TH') : '-'}</div>
                                 {e.runNumber && <div className="text-xs text-blue-500 font-bold mt-1 bg-blue-50 inline-block px-2 rounded">{e.runNumber}</div>}
                             </td>
                             <td className="p-4 text-sm font-medium text-gray-800">{e.description}{e.items && Array.isArray(e.items) && (<div className="text-xs text-gray-400 font-normal">ประกอบด้วย {e.items.length} รายการย่อย</div>)}</td>
                             <td className="p-4 text-sm text-gray-600">{e.userName}{user.role !== ROLES.EMPLOYEE && (<span className="block text-xs text-gray-400">{getBranchName(e.branchId)}</span>)}</td>
                             <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(e.amount).toLocaleString()}</td>
-                            <td className="p-4 text-center"><span className={`inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${STATUS[e.status.toUpperCase()]?.color || 'bg-gray-100'}`}>{STATUS[e.status.toUpperCase()]?.label || e.status}</span></td>
+                            <td className="p-4 text-center"><span className={`inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${STATUS[(e.status || 'PENDING').toUpperCase()]?.color || 'bg-gray-100'}`}>{STATUS[(e.status || 'PENDING').toUpperCase()]?.label || e.status}</span></td>
                             <td className="p-4 text-gray-400">{expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}</td>
                           </tr>
                           {expandedId === e.id && (
@@ -1334,7 +1334,7 @@
                                     {(e.status === 'transferred' || e.status === 'paid_cash') && (
                                       <div className="bg-green-50 px-4 py-3 border-b border-green-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                          <div className="flex items-center gap-2 text-green-800 font-bold text-sm">
-                                            <CheckCircle size={18} /> {e.status === 'paid_cash' ? 'รับเงินสดแล้วเมื่อ' : 'โอนเงินแล้วเมื่อ'} {e.transferDate ? new Date(e.transferDate.seconds * 1000).toLocaleString('th-TH') : '-'}
+                                            <CheckCircle size={18} /> {e.status === 'paid_cash' ? 'รับเงินสดแล้วเมื่อ' : 'โอนเงินแล้วเมื่อ'} {e.transferDate ? new Date(e.transferDate?.seconds ? e.transferDate.seconds * 1000 : e.transferDate).toLocaleString('th-TH') : '-'}
                                          </div>
                                          {e.transferSlip && (
                                            <button onClick={(ev) => { ev.stopPropagation(); setViewImage(e.transferSlip); }} className="text-green-600 underline text-sm flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-green-200">
@@ -1464,7 +1464,7 @@
                                 <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2 text-xs md:text-sm text-gray-600">
                                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] md:text-xs font-mono font-bold border border-blue-100">{e.runNumber}</span>
                                      <span className="flex items-center gap-1 text-[10px] md:text-xs"><UserCircle size={12}/> {e.userName}</span>
-                                     <span className="flex items-center gap-1 text-[10px] md:text-xs text-gray-400"><History size={12}/> {new Date(e.date?.seconds * 1000).toLocaleDateString('th-TH')}</span>
+                                     <span className="flex items-center gap-1 text-[10px] md:text-xs text-gray-400"><History size={12}/> {e.date ? new Date(e.date?.seconds ? e.date.seconds * 1000 : e.date).toLocaleDateString('th-TH') : '-'}</span>
                                 </div>
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 md:hidden">
                                     {expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
