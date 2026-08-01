@@ -18,7 +18,7 @@
     <script>
       Babel.registerPreset("env-plus", {
         presets: [
-          [Babel.availablePresets["env"]]
+          [Babel.availablePresets["env"], { "modules": false }]
         ],
         plugins: [
           [Babel.availablePlugins["transform-react-jsx"], { "runtime": "classic" }]
@@ -45,15 +45,15 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module" data-presets="env-plus">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
         import { 
           getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged
-        } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
         import { 
           getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc,
           serverTimestamp, setDoc, getDoc, runTransaction
-        } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-        import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js';
+        } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+        import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js';
 
         const { useState, useEffect, useMemo, createContext, useContext } = React;
         const { 
@@ -159,6 +159,63 @@
           PAID_CASH: { label: 'รับเงินสดแล้ว', color: 'bg-emerald-100 text-emerald-800', lineText: 'รับเงินสดเรียบร้อย' },
           REJECTED: { label: 'ไม่อนุมัติ', color: 'bg-red-100 text-red-800', lineText: 'ถูกปฏิเสธ' }
         };
+
+        // ป้องกันหน้าจอขาว 100%: ฟังก์ชันจัดรูปแบบวันที่ปลอดภัยที่สุด
+        const safeFormatDate = (dateVal, format = 'date') => {
+            if (!dateVal) return '-';
+            try {
+                let d;
+                if (dateVal.seconds) d = new Date(dateVal.seconds * 1000);
+                else if (dateVal instanceof Date) d = dateVal;
+                else d = new Date(dateVal);
+                
+                if (isNaN(d.getTime())) return '-';
+                
+                if (format === 'time') return d.toLocaleTimeString('th-TH');
+                if (format === 'datetime') return d.toLocaleString('th-TH');
+                if (format === 'iso') return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                return d.toLocaleDateString('th-TH');
+            } catch(e) { return '-'; }
+        };
+
+        // ป้องกันหน้าจอขาว 100%: ฟังก์ชันจัดรูปแบบสถานะปลอดภัยที่สุด
+        const getSafeStatus = (statusVal) => {
+            if (!statusVal) return { label: 'ไม่ทราบ', color: 'bg-gray-100 text-gray-500', lineText: 'ไม่ทราบสถานะ' };
+            const key = String(statusVal).toUpperCase();
+            return STATUS[key] || { label: String(statusVal), color: 'bg-gray-100 text-gray-800', lineText: String(statusVal) };
+        };
+
+        // Error Boundary Component: ป้องกันการพังทั้งหน้าจอ (กันหน้าจอขาว)
+        class ErrorBoundary extends React.Component {
+          constructor(props) {
+            super(props);
+            this.state = { hasError: false, error: null };
+          }
+          static getDerivedStateFromError(error) {
+            return { hasError: true, error };
+          }
+          componentDidCatch(error, errorInfo) {
+            console.error("UI Rendering Error Captured:", error, errorInfo);
+          }
+          render() {
+            if (this.state.hasError) {
+              return (
+                <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-red-50 rounded-2xl border border-red-200 text-center animate-in fade-in m-4">
+                  <i className="fas fa-triangle-exclamation text-6xl text-red-400 mb-6 drop-shadow-sm"></i>
+                  <h2 className="text-2xl font-black text-red-800 mb-2">แสดงผลข้อมูลไม่สำเร็จ</h2>
+                  <p className="text-red-600 mb-6 font-medium max-w-md">ระบบตรวจพบข้อมูลบางส่วนในฐานข้อมูลเก่าชำรุดหรือมีรูปแบบไม่ถูกต้อง ทำให้การแสดงผลหน้านี้ขัดข้องชั่วคราว</p>
+                  <button 
+                    onClick={() => { this.setState({ hasError: false }); window.location.reload(); }} 
+                    className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all flex items-center gap-2 active:scale-95"
+                  >
+                    <i className="fas fa-rotate"></i> โหลดหน้าใหม่อีกครั้ง
+                  </button>
+                </div>
+              );
+            }
+            return this.props.children;
+          }
+        }
 
         const UIContext = createContext();
 
@@ -305,7 +362,7 @@
         };
 
         const createExpenseFlexMessage = (expense, newStatus, slipImage = null, approverName = null, companyName = null) => {
-          const statusInfo = STATUS[newStatus.toUpperCase()] || STATUS.PENDING;
+          const statusInfo = getSafeStatus(newStatus);
           const colorCode = newStatus === 'transferred' ? '#4ade80' : newStatus === 'paid_cash' ? '#10b981' : newStatus === 'rejected' ? '#f87171' : newStatus === 'waiting_transfer' ? '#60a5fa' : '#fbbf24';
 
           const safeItems = Array.isArray(expense.items) ? expense.items : [];
@@ -320,11 +377,7 @@
           if (safeItems.length > 3) itemsPreview.push({ type: 'text', text: `... และอีก ${safeItems.length - 3} รายการ`, size: 'xxs', color: '#aaaaaa', margin: 'xs', align: 'center' });
           if (itemsPreview.length === 0) itemsPreview.push({ type: 'text', text: '-', size: 'xxs', color: '#aaaaaa' });
 
-          let dateDisplay = '-';
-          try {
-            let d = expense.date && typeof expense.date.seconds === 'number' ? new Date(expense.date.seconds * 1000) : (expense.date instanceof Date ? expense.date : new Date());
-            dateDisplay = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-          } catch (e) {}
+          let dateDisplay = safeFormatDate(expense.date);
 
           const flexMessage = {
             type: 'flex', altText: `สถานะใบเบิก ${expense.runNumber || ''}: ${statusInfo.lineText}`,
@@ -576,11 +629,9 @@
             return expenses.filter(e => {
               let matches = true;
               if (dateRange.start && dateRange.end) {
-                const expenseDate = e.date?.seconds ? new Date(e.date.seconds * 1000) : new Date(e.date);
-                const start = new Date(dateRange.start);
-                const end = new Date(dateRange.end);
-                end.setHours(23, 59, 59, 999); 
-                if (expenseDate < start || expenseDate > end) matches = false;
+                // แก้ไขการเปรียบเทียบวันที่ให้ปลอดภัย
+                const dateStr = safeFormatDate(e.date, 'iso');
+                if (dateStr !== '-' && (dateStr < dateRange.start || dateStr > dateRange.end)) matches = false;
               }
               if (filterBranch !== 'ALL') {
                   const hasMatchingItem = e.items && Array.isArray(e.items) && e.items.some(i => (i.branchId || e.branchId) === filterBranch);
@@ -593,11 +644,11 @@
 
           const calculateSum = (statusList) => {
               return filteredExpenses.reduce((sum, e) => {
-                  if (statusList.includes(e.status)) {
+                  if (statusList.includes(getSafeStatus(e.status).label === 'ไม่ทราบ' ? e.status : e.status.toLowerCase())) {
                       if (filterBranch !== 'ALL' && e.items && Array.isArray(e.items)) {
-                          return sum + e.items.reduce((itemSum, item) => (item.branchId || e.branchId) === filterBranch ? itemSum + parseFloat(item.amount) : itemSum, 0);
+                          return sum + e.items.reduce((itemSum, item) => (item.branchId || e.branchId) === filterBranch ? itemSum + (parseFloat(item.amount) || 0) : itemSum, 0);
                       }
-                      return sum + parseFloat(e.amount);
+                      return sum + (parseFloat(e.amount) || 0);
                   }
                   return sum;
               }, 0);
@@ -610,17 +661,17 @@
 
           const categoryData = useMemo(() => {
             const data = {};
-            filteredExpenses.filter(e => e.status !== 'rejected').forEach(e => {
+            filteredExpenses.filter(e => getSafeStatus(e.status).label !== 'ไม่อนุมัติ').forEach(e => {
               if (e.items && Array.isArray(e.items) && e.items.length > 0) {
                 e.items.forEach(item => { 
                     const itemBranch = item.branchId || e.branchId;
                     if (filterBranch === 'ALL' || itemBranch === filterBranch) {
-                        data[item.category] = (data[item.category] || 0) + parseFloat(item.amount); 
+                        data[item.category] = (data[item.category] || 0) + (parseFloat(item.amount) || 0); 
                     }
                 });
               } else {
                 if (filterBranch === 'ALL' || e.branchId === filterBranch) {
-                    data[e.category] = (data[e.category] || 0) + parseFloat(e.amount);
+                    data[e.category] = (data[e.category] || 0) + (parseFloat(e.amount) || 0);
                 }
               }
             });
@@ -638,16 +689,16 @@
 
           const branchData = useMemo(() => {
             const data = {};
-            filteredExpenses.filter(e => e.status !== 'rejected').forEach(e => {
+            filteredExpenses.filter(e => getSafeStatus(e.status).label !== 'ไม่อนุมัติ').forEach(e => {
               if (e.items && Array.isArray(e.items)) {
                 e.items.forEach(item => {
                     const itemBranch = item.branchId || e.branchId;
                     const branchName = itemBranch === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === itemBranch)?.name || 'ไม่ระบุ');
-                    data[branchName] = (data[branchName] || 0) + parseFloat(item.amount);
+                    data[branchName] = (data[branchName] || 0) + (parseFloat(item.amount) || 0);
                 });
               } else {
                 const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || 'ไม่ระบุ');
-                data[branchName] = (data[branchName] || 0) + parseFloat(e.amount);
+                data[branchName] = (data[branchName] || 0) + (parseFloat(e.amount) || 0);
               }
             });
             return Object.keys(data).map(key => ({ name: key, value: data[key] })).sort((a,b) => b.value - a.value).filter(d => d.value > 0);
@@ -749,13 +800,13 @@
                            <p className="font-medium text-gray-800 text-sm truncate">{e.description}</p>
                            <div className="flex items-center gap-2 mt-1">
                              <span className="text-[10px] text-blue-500 bg-blue-50 px-1 rounded font-mono shrink-0">{e.runNumber}</span>
-                             <span className="text-[10px] text-gray-500 shrink-0">{e.date ? new Date(e.date?.seconds ? e.date.seconds * 1000 : e.date).toLocaleDateString('th-TH') : '-'}</span>
+                             <span className="text-[10px] text-gray-500 shrink-0">{safeFormatDate(e.date)}</span>
                            </div>
                          </div>
                          <div className="text-right shrink-0">
-                           <p className="font-bold text-gray-800 text-sm">฿{parseFloat(e.amount).toLocaleString()}</p>
-                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${STATUS[(e.status || 'PENDING').toUpperCase()]?.color || 'bg-gray-100'}`}>
-                             {STATUS[(e.status || 'PENDING').toUpperCase()]?.label || e.status}
+                           <p className="font-bold text-gray-800 text-sm">฿{(parseFloat(e.amount) || 0).toLocaleString()}</p>
+                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${getSafeStatus(e.status).color}`}>
+                             {getSafeStatus(e.status).label}
                            </span>
                          </div>
                        </div>
@@ -1081,7 +1132,7 @@
                 const branchSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'branches', branchId));
                 if (branchSnap.exists()) {
                      const bData = branchSnap.data();
-                     prefix = bData.location || (bData.name ? bData.name.substring(0, 3).toUpperCase() : 'BR');
+                     prefix = bData.location || (bData.name ? String(bData.name).substring(0, 3).toUpperCase() : 'BR');
                 }
             }
             const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'expenses_running');
@@ -1229,11 +1280,11 @@
                                         <td className="p-4 text-sm">
                                             <div className="font-medium text-gray-800">{item.description}</div>
                                             <div className="text-xs text-gray-500">
-                                                {item.date} • {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} - ${cat.name}` : item.category; })()} 
+                                                {safeFormatDate(item.date)} • {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} - ${cat.name}` : item.category; })()} 
                                                 {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXCLUSIVE) && (<span className="ml-2 text-blue-600 font-semibold border border-blue-200 bg-blue-50 px-1 rounded">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id === item.branchId)?.name}</span>)}
                                             </div>
                                         </td>
-                                        <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(item.amount).toLocaleString()}</td>
+                                        <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{(parseFloat(item.amount) || 0).toLocaleString()}</td>
                                         <td className="p-4 text-right w-24">
                                             <div className="flex items-center justify-end gap-2">
                                                 {item.receipt && (
@@ -1311,13 +1362,13 @@
                         <React.Fragment key={e.id}>
                           <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}>
                             <td className="p-4 text-sm text-gray-600">
-                                <div>{e.date ? new Date(e.date?.seconds ? e.date.seconds * 1000 : e.date).toLocaleDateString('th-TH') : '-'}</div>
+                                <div>{safeFormatDate(e.date)}</div>
                                 {e.runNumber && <div className="text-xs text-blue-500 font-bold mt-1 bg-blue-50 inline-block px-2 rounded">{e.runNumber}</div>}
                             </td>
                             <td className="p-4 text-sm font-medium text-gray-800">{e.description}{e.items && Array.isArray(e.items) && (<div className="text-xs text-gray-400 font-normal">ประกอบด้วย {e.items.length} รายการย่อย</div>)}</td>
                             <td className="p-4 text-sm text-gray-600">{e.userName}{user.role !== ROLES.EMPLOYEE && (<span className="block text-xs text-gray-400">{getBranchName(e.branchId)}</span>)}</td>
-                            <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(e.amount).toLocaleString()}</td>
-                            <td className="p-4 text-center"><span className={`inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${STATUS[(e.status || 'PENDING').toUpperCase()]?.color || 'bg-gray-100'}`}>{STATUS[(e.status || 'PENDING').toUpperCase()]?.label || e.status}</span></td>
+                            <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{(parseFloat(e.amount) || 0).toLocaleString()}</td>
+                            <td className="p-4 text-center"><span className={`inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${getSafeStatus(e.status).color}`}>{getSafeStatus(e.status).label}</span></td>
                             <td className="p-4 text-gray-400">{expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}</td>
                           </tr>
                           {expandedId === e.id && (
@@ -1334,7 +1385,7 @@
                                     {(e.status === 'transferred' || e.status === 'paid_cash') && (
                                       <div className="bg-green-50 px-4 py-3 border-b border-green-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                          <div className="flex items-center gap-2 text-green-800 font-bold text-sm">
-                                            <CheckCircle size={18} /> {e.status === 'paid_cash' ? 'รับเงินสดแล้วเมื่อ' : 'โอนเงินแล้วเมื่อ'} {e.transferDate ? new Date(e.transferDate?.seconds ? e.transferDate.seconds * 1000 : e.transferDate).toLocaleString('th-TH') : '-'}
+                                            <CheckCircle size={18} /> {e.status === 'paid_cash' ? 'รับเงินสดแล้วเมื่อ' : 'โอนเงินแล้วเมื่อ'} {safeFormatDate(e.transferDate, 'datetime')}
                                          </div>
                                          {e.transferSlip && (
                                            <button onClick={(ev) => { ev.stopPropagation(); setViewImage(e.transferSlip); }} className="text-green-600 underline text-sm flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-green-200">
@@ -1349,7 +1400,7 @@
                                       </div>
                                     )}
                                     <div className="bg-gray-100 px-4 py-2 border-b text-xs font-semibold text-gray-600 flex items-center gap-2"><List size={14}/> รายละเอียดรายการย่อย</div>
-                                    {e.items && Array.isArray(e.items) ? (<div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]"><thead><tr className="border-b text-gray-500 bg-gray-50"><th className="p-3 text-left w-10">#</th><th className="p-3 text-left">รายการ</th><th className="p-3 text-left">กลุ่ม/รายการ/สาขา</th><th className="p-3 text-right">จำนวนเงิน</th><th className="p-3 text-center">หลักฐาน</th></tr></thead><tbody>{e.items.map((item, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-gray-50"><td className="p-3 text-gray-500">{idx+1}</td><td className="p-3"><div>{item.description}</div><div className="text-xs text-gray-400">{item.date}</div></td><td className="p-3 text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700 text-xs">{cat.group}</div><div>{cat.name}</div></> : <div>{item.category}</div>; })()}{(item.branchId && item.branchId !== e.branchId) && (<div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>)}</td><td className="p-3 text-right font-medium">฿{parseFloat(item.amount).toLocaleString()}</td><td className="p-3 text-center">{item.receipt ? (<button onClick={(ev) => { ev.stopPropagation(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 flex items-center justify-center gap-1 text-xs mx-auto"><ImageIcon size={14}/> ดูรูป</button>) : <span className="text-gray-300">-</span>}</td></tr>))}</tbody></table></div>) : (<div className="p-4 text-gray-500 text-center">ไม่มีรายละเอียดรายการย่อย</div>)}
+                                    {e.items && Array.isArray(e.items) ? (<div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]"><thead><tr className="border-b text-gray-500 bg-gray-50"><th className="p-3 text-left w-10">#</th><th className="p-3 text-left">รายการ</th><th className="p-3 text-left">กลุ่ม/รายการ/สาขา</th><th className="p-3 text-right">จำนวนเงิน</th><th className="p-3 text-center">หลักฐาน</th></tr></thead><tbody>{e.items.map((item, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-gray-50"><td className="p-3 text-gray-500">{idx+1}</td><td className="p-3"><div>{item.description}</div><div className="text-xs text-gray-400">{safeFormatDate(item.date)}</div></td><td className="p-3 text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700 text-xs">{cat.group}</div><div>{cat.name}</div></> : <div>{item.category}</div>; })()}{(item.branchId && item.branchId !== e.branchId) && (<div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>)}</td><td className="p-3 text-right font-medium">฿{(parseFloat(item.amount) || 0).toLocaleString()}</td><td className="p-3 text-center">{item.receipt ? (<button onClick={(ev) => { ev.stopPropagation(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 flex items-center justify-center gap-1 text-xs mx-auto"><ImageIcon size={14}/> ดูรูป</button>) : <span className="text-gray-300">-</span>}</td></tr>))}</tbody></table></div>) : (<div className="p-4 text-gray-500 text-center">ไม่มีรายละเอียดรายการย่อย</div>)}
                                  </div>
                               </td>
                             </tr>
@@ -1464,14 +1515,14 @@
                                 <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2 text-xs md:text-sm text-gray-600">
                                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] md:text-xs font-mono font-bold border border-blue-100">{e.runNumber}</span>
                                      <span className="flex items-center gap-1 text-[10px] md:text-xs"><UserCircle size={12}/> {e.userName}</span>
-                                     <span className="flex items-center gap-1 text-[10px] md:text-xs text-gray-400"><History size={12}/> {e.date ? new Date(e.date?.seconds ? e.date.seconds * 1000 : e.date).toLocaleDateString('th-TH') : '-'}</span>
+                                     <span className="flex items-center gap-1 text-[10px] md:text-xs text-gray-400"><History size={12}/> {safeFormatDate(e.date)}</span>
                                 </div>
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 md:hidden">
                                     {expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between w-full md:w-auto md:px-4 text-right">
-                                <span className="block font-bold text-blue-600 text-base md:text-lg">฿{parseFloat(e.amount).toLocaleString()}</span>
+                                <span className="block font-bold text-blue-600 text-base md:text-lg">฿{(parseFloat(e.amount) || 0).toLocaleString()}</span>
                                 <div className="pl-2 text-gray-400 hidden md:block">
                                      {expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
                                 </div>
@@ -1561,7 +1612,7 @@
                                         </div>
                                     </div>
                                 ) : (
-                                    e.items && Array.isArray(e.items) ? (e.items.map((item, idx) => (<div key={idx} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 border-b last:border-0 gap-2 sm:gap-0"><div><div className="text-sm font-medium text-gray-800">{item.description}</div><div className="text-xs text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} • ${cat.name}` : item.category; })()}</div>{(item.branchId && item.branchId !== e.branchId) && <div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>}</div><div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto"><span className="text-sm font-bold">฿{parseFloat(item.amount).toLocaleString()}</span>{item.receipt && (<button onClick={(ev) => {ev.stopPropagation(); setViewImage(item.receipt);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded border"><ImageIcon size={16}/></button>)}</div></div>))) : <div className="p-3 text-gray-500 text-sm">ไม่มีรายการย่อย</div>
+                                    e.items && Array.isArray(e.items) ? (e.items.map((item, idx) => (<div key={idx} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 border-b last:border-0 gap-2 sm:gap-0"><div><div className="text-sm font-medium text-gray-800">{item.description}</div><div className="text-xs text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} • ${cat.name}` : item.category; })()}</div>{(item.branchId && item.branchId !== e.branchId) && <div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>}</div><div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto"><span className="text-sm font-bold">฿{(parseFloat(item.amount) || 0).toLocaleString()}</span>{item.receipt && (<button onClick={(ev) => {ev.stopPropagation(); setViewImage(item.receipt);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded border"><ImageIcon size={16}/></button>)}</div></div>))) : <div className="p-3 text-gray-500 text-sm">ไม่มีรายการย่อย</div>
                                 )}
                            </div>
 
@@ -1636,10 +1687,8 @@
 
           useEffect(() => {
             const now = new Date();
-            // แก้ไขการจัดรูปแบบวันที่ให้ปลอดภัย และอิงตาม Local Timezone
-            const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-            const lastDayDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            const lastDay = `${lastDayDate.getFullYear()}-${String(lastDayDate.getMonth() + 1).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
             setDateRange({ start: firstDay, end: lastDay });
 
             const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
@@ -1656,33 +1705,15 @@
             return () => unsub();
           }, []);
 
-          // สร้างฟังก์ชันแปลงวันที่แบบปลอดภัย ป้องกันบัค Invalid Date (จอขาว)
-          const formatDateLocal = (dateObj) => {
-              if (!dateObj) return '-';
-              try {
-                  let d;
-                  if (dateObj.seconds) d = new Date(dateObj.seconds * 1000);
-                  else if (dateObj instanceof Date) d = dateObj;
-                  else d = new Date(dateObj);
-                  
-                  if (isNaN(d.getTime())) return typeof dateObj === 'string' ? dateObj : '-';
-                  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-              } catch (e) {
-                  return '-';
-              }
-          };
-
           const reportData = useMemo(() => {
             const flat = [];
             expenses.forEach(e => {
-               const expenseDateStr = formatDateLocal(e.date);
+               const expenseDateStr = safeFormatDate(e.date, 'iso');
                if (dateRange.start && expenseDateStr !== '-' && expenseDateStr < dateRange.start) return;
                if (dateRange.end && expenseDateStr !== '-' && expenseDateStr > dateRange.end) return;
                if (filterUser !== 'ALL' && e.userId !== filterUser) return;
 
-               // ดักจับกรณีที่ e.status เป็น undefined หรือไม่ได้เป็น String ป้องกัน Error .toUpperCase()
-               const safeStatus = typeof e.status === 'string' ? e.status.toUpperCase() : 'PENDING';
-               const statusObj = STATUS[safeStatus] || { label: e.status || 'ไม่ทราบ', color: 'bg-gray-100 text-gray-800' };
+               const statusObj = getSafeStatus(e.status);
                const approverName = e.approverId ? (userMap[e.approverId] || 'Unknown ID') : '-';
                
                if (e.items && Array.isArray(e.items)) { 
@@ -1694,11 +1725,10 @@
 
                        const branchName = itemBranchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === itemBranchId)?.name || '-');
 
-                       // เพิ่ม Fallback ป้องกันค่า Null หรือ Undefined ไปคำนวณ
                        flat.push({ 
-                           id: e.id + '-' + item.id, expenseId: e.id, runNumber: e.runNumber, date: item.date || expenseDateStr, description: item.description || '-', 
+                           id: e.id + '-' + item.id, expenseId: e.id, runNumber: e.runNumber, date: safeFormatDate(item.date) || expenseDateStr, description: item.description, 
                            category: item.category, amount: parseFloat(item.amount) || 0, status: statusObj.label, statusColor: statusObj.color, 
-                           branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status || 'pending'
+                           branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status
                        }); 
                    }); 
                } else { 
@@ -1708,18 +1738,13 @@
                    const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || '-');
 
                    flat.push({ 
-                       id: e.id, expenseId: e.id, runNumber: e.runNumber, date: expenseDateStr, 
-                       description: e.description || '-', category: e.category, amount: parseFloat(e.amount) || 0, status: statusObj.label, 
-                       statusColor: statusObj.color, branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status || 'pending'
+                       id: e.id, expenseId: e.id, runNumber: e.runNumber, date: safeFormatDate(e.date), 
+                       description: e.description, category: e.category, amount: parseFloat(e.amount) || 0, status: statusObj.label, 
+                       statusColor: statusObj.color, branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status
                    }); 
                }
             });
-            // กรองและเรียงวันที่
-            return flat.sort((a, b) => {
-                const dateA = new Date(a.date);
-                const dateB = new Date(b.date);
-                return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
-            });
+            return flat.sort((a, b) => new Date(b.date) - new Date(a.date));
           }, [expenses, branches, userMap, dateRange, filterCategory, filterBranch, filterUser]);
 
           const totalAmount = reportData.reduce((sum, item) => item.statusRaw !== 'rejected' ? sum + item.amount : sum, 0);
@@ -1812,162 +1837,162 @@
                             ฿{remainingBudget.toLocaleString()}
                         </h3>
                     </div>
-                        <button onClick={exportToCSV} className="w-full md:w-auto bg-emerald-600 text-white px-5 py-3 rounded-xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition flex items-center justify-center gap-2 text-sm xl:ml-0"><FileSpreadsheet size={18} /> Export Excel (สรุปยอด)</button>
-                      </div>
-                   </div>
+                    <button onClick={exportToCSV} className="w-full md:w-auto bg-emerald-600 text-white px-5 py-3 rounded-xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition flex items-center justify-center gap-2 text-sm xl:ml-0"><FileSpreadsheet size={18} /> Export Excel (สรุปยอด)</button>
+                  </div>
+               </div>
 
-                   <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 grid grid-cols-2 md:flex md:flex-row gap-3 items-end md:items-center">
-                      <div className="col-span-2 flex items-center gap-2 text-gray-700 font-bold md:mr-2"><Filter size={18}/> ตัวกรอง:</div>
-                      <div className="col-span-2 flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border">
-                         <span className="text-[10px] md:text-xs text-gray-500">วันที่:</span>
-                         <input type="date" className="bg-white border rounded px-1 md:px-2 py-1 text-[10px] md:text-xs flex-1" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} />
-                         <span className="text-[10px] md:text-xs text-gray-400">-</span>
-                         <input type="date" className="bg-white border rounded px-1 md:px-2 py-1 text-[10px] md:text-xs flex-1" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} />
-                      </div>
-                      <div>
-                         <select className="w-full border rounded-lg p-2 text-xs" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-                             <option value="ALL">ทุกหมวดหมู่</option>
-                             {EXPENSE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                         </select>
-                      </div>
-                      <div>
-                         <select className="w-full border rounded-lg p-2 text-xs" value={filterBranch} onChange={e => setFilterBranch(e.target.value)}>
-                             <option value="ALL">ทุกสาขา</option>
-                             {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                             <option value="HEADQUARTER">สำนักงานใหญ่</option>
-                         </select>
-                      </div>
-                      <div className="col-span-2 md:col-span-1">
-                         <select className="w-full border rounded-lg p-2 text-xs" value={filterUser} onChange={e => setFilterUser(e.target.value)}>
-                             <option value="ALL">ผู้เบิกทุกคน</option>
-                             {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                         </select>
-                      </div>
-                      <div className="col-span-2 md:hidden w-full text-right mt-2 border-t pt-2">
-                         <span className="text-sm font-bold text-gray-600">รวม: ฿{totalAmount.toLocaleString()}</span>
-                      </div>
-                   </div>
+               <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 grid grid-cols-2 md:flex md:flex-row gap-3 items-end md:items-center">
+                  <div className="col-span-2 flex items-center gap-2 text-gray-700 font-bold md:mr-2"><Filter size={18}/> ตัวกรอง:</div>
+                  <div className="col-span-2 flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border">
+                     <span className="text-[10px] md:text-xs text-gray-500">วันที่:</span>
+                     <input type="date" className="bg-white border rounded px-1 md:px-2 py-1 text-[10px] md:text-xs flex-1" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} />
+                     <span className="text-[10px] md:text-xs text-gray-400">-</span>
+                     <input type="date" className="bg-white border rounded px-1 md:px-2 py-1 text-[10px] md:text-xs flex-1" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} />
+                  </div>
+                  <div>
+                     <select className="w-full border rounded-lg p-2 text-xs" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+                         <option value="ALL">ทุกหมวดหมู่</option>
+                         {EXPENSE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                     </select>
+                  </div>
+                  <div>
+                     <select className="w-full border rounded-lg p-2 text-xs" value={filterBranch} onChange={e => setFilterBranch(e.target.value)}>
+                         <option value="ALL">ทุกสาขา</option>
+                         {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                         <option value="HEADQUARTER">สำนักงานใหญ่</option>
+                     </select>
+                  </div>
+                  <div className="col-span-2 md:col-span-1">
+                     <select className="w-full border rounded-lg p-2 text-xs" value={filterUser} onChange={e => setFilterUser(e.target.value)}>
+                         <option value="ALL">ผู้เบิกทุกคน</option>
+                         {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                     </select>
+                  </div>
+                  <div className="col-span-2 md:hidden w-full text-right mt-2 border-t pt-2">
+                     <span className="text-sm font-bold text-gray-600">รวม: ฿{totalAmount.toLocaleString()}</span>
+                  </div>
+               </div>
 
-                   <div className="bg-white rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
-                      <div className="overflow-y-auto overflow-x-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200">
-                         <table className="w-full text-left border-collapse relative min-w-[800px]">
-                            <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
-                               <tr>
-                                  <th className="p-4 text-sm font-semibold text-gray-600">วันที่/เลขที่</th>
-                                  <th className="p-4 text-sm font-semibold text-gray-600">รายละเอียด</th>
-                                  <th className="p-4 text-sm font-semibold text-gray-600">กลุ่ม / รายการ</th>
-                                  <th className="p-4 text-sm font-semibold text-gray-600">ผู้เบิก/สาขา</th>
-                                  <th className="p-4 text-sm font-semibold text-gray-600 text-right">จำนวนเงิน</th>
-                                  <th className="p-4 text-sm font-semibold text-gray-600 text-center">สถานะ</th>
-                                  <th className="p-4 text-sm font-semibold text-gray-600 text-center">ผู้อนุมัติ</th>
-                                  {canEdit && <th className="p-4 text-sm font-semibold text-gray-600 text-center w-20">จัดการ</th>}
-                               </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                               {reportData.length === 0 ? (<tr><td colSpan={canEdit ? "8" : "7"} className="p-8 text-center text-gray-400">ไม่พบข้อมูลตามเงื่อนไข</td></tr>) : reportData.map((item, idx) => (
-                                  <tr key={idx} className="hover:bg-gray-50">
-                                     <td className="p-4 text-sm text-gray-600 whitespace-nowrap"><div>{item.date}</div><div className="text-[10px] md:text-xs text-blue-500 font-bold">{item.runNumber}</div></td>
-                                     <td className="p-4 text-sm font-medium text-gray-800"><div className="w-48 truncate">{item.description}</div></td>
-                                     <td className="p-4 text-xs md:text-sm text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700">{cat.group}</div><div className="text-gray-500">{cat.name}</div></> : item.category; })()}</td>
-                                     <td className="p-4 text-sm text-gray-600"><div className="font-medium">{item.requester}</div><div className="text-[10px] md:text-xs text-gray-400">{item.branch}</div></td>
-                                     <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{item.amount.toLocaleString()}</td>
-                                     <td className="p-4 text-center"><span className={`inline-block px-2 py-0.5 rounded text-[10px] md:text-xs font-semibold ${item.statusColor}`}>{item.status}</span></td>
-                                     <td className="p-4 text-xs md:text-sm text-center text-gray-600">{item.approver}</td>
-                                     {canEdit && (
-                                         <td className="p-4 text-center">
-                                             <button onClick={() => {
-                                                 const expense = expenses.find(ex => ex.id === item.expenseId);
-                                                 if(expense) {
-                                                     setEditingExpense(expense);
-                                                     setEditedItems(JSON.parse(JSON.stringify(expense.items || [])));
-                                                 }
-                                             }} className="text-blue-600 hover:text-blue-800 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 p-1.5 rounded-lg shadow-sm transition-all" title="แก้ไขรายการนี้">
-                                                 <Edit size={14} />
-                                             </button>
-                                         </td>
-                                     )}
-                                  </tr>
-                               ))}
-                            </tbody>
-                         </table>
-                      </div>
-                   </div>
-                   
-                   {editingExpense && (
-                      <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setEditingExpense(null)}>
-                          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                              <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center shrink-0">
-                                  <div className="flex items-center gap-2 text-blue-700 font-bold text-lg">
-                                      <Edit size={22} /> แก้ไขรายการ (เลขที่ {editingExpense.runNumber})
-                                  </div>
-                                  <button onClick={() => setEditingExpense(null)} className="text-gray-400 hover:text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors"><X size={18}/></button>
+               <div className="bg-white rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
+                  <div className="overflow-y-auto overflow-x-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200">
+                     <table className="w-full text-left border-collapse relative min-w-[800px]">
+                        <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                           <tr>
+                              <th className="p-4 text-sm font-semibold text-gray-600">วันที่/เลขที่</th>
+                              <th className="p-4 text-sm font-semibold text-gray-600">รายละเอียด</th>
+                              <th className="p-4 text-sm font-semibold text-gray-600">กลุ่ม / รายการ</th>
+                              <th className="p-4 text-sm font-semibold text-gray-600">ผู้เบิก/สาขา</th>
+                              <th className="p-4 text-sm font-semibold text-gray-600 text-right">จำนวนเงิน</th>
+                              <th className="p-4 text-sm font-semibold text-gray-600 text-center">สถานะ</th>
+                              <th className="p-4 text-sm font-semibold text-gray-600 text-center">ผู้อนุมัติ</th>
+                              {canEdit && <th className="p-4 text-sm font-semibold text-gray-600 text-center w-20">จัดการ</th>}
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                           {reportData.length === 0 ? (<tr><td colSpan={canEdit ? "8" : "7"} className="p-8 text-center text-gray-400">ไม่พบข้อมูลตามเงื่อนไข</td></tr>) : reportData.map((item, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50">
+                                 <td className="p-4 text-sm text-gray-600 whitespace-nowrap"><div>{item.date}</div><div className="text-[10px] md:text-xs text-blue-500 font-bold">{item.runNumber}</div></td>
+                                 <td className="p-4 text-sm font-medium text-gray-800"><div className="w-48 truncate">{item.description}</div></td>
+                                 <td className="p-4 text-xs md:text-sm text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700">{cat.group}</div><div className="text-gray-500">{cat.name}</div></> : item.category; })()}</td>
+                                 <td className="p-4 text-sm text-gray-600"><div className="font-medium">{item.requester}</div><div className="text-[10px] md:text-xs text-gray-400">{item.branch}</div></td>
+                                 <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{item.amount.toLocaleString()}</td>
+                                 <td className="p-4 text-center"><span className={`inline-block px-2 py-0.5 rounded text-[10px] md:text-xs font-semibold ${item.statusColor}`}>{item.status}</span></td>
+                                 <td className="p-4 text-xs md:text-sm text-center text-gray-600">{item.approver}</td>
+                                 {canEdit && (
+                                     <td className="p-4 text-center">
+                                         <button onClick={() => {
+                                             const expense = expenses.find(ex => ex.id === item.expenseId);
+                                             if(expense) {
+                                                 setEditingExpense(expense);
+                                                 setEditedItems(JSON.parse(JSON.stringify(expense.items || [])));
+                                             }
+                                         }} className="text-blue-600 hover:text-blue-800 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 p-1.5 rounded-lg shadow-sm transition-all" title="แก้ไขรายการนี้">
+                                             <Edit size={14} />
+                                         </button>
+                                     </td>
+                                 )}
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+               
+               {editingExpense && (
+                  <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setEditingExpense(null)}>
+                      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                          <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center shrink-0">
+                              <div className="flex items-center gap-2 text-blue-700 font-bold text-lg">
+                                  <Edit size={22} /> แก้ไขรายการ (เลขที่ {editingExpense.runNumber})
                               </div>
-                              <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
-                                   {editedItems.length === 0 && <div className="text-center text-gray-500 text-sm py-4">ไม่มีรายการย่อย (กรุณาเพิ่มรายการ)</div>}
-                                   {editedItems.map((item, idx) => (
-                                       <div key={idx} className="flex flex-col p-4 md:p-5 border border-gray-200 rounded-xl bg-white shadow-sm gap-3 relative">
-                                           <button onClick={() => { const newItems = [...editedItems]; newItems.splice(idx, 1); setEditedItems(newItems); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-md transition-colors" title="ลบรายการนี้"><Trash2 size={16}/></button>
-                                           <div className="flex flex-col lg:flex-row gap-4 lg:pr-10">
-                                               <div className="flex-1 space-y-3">
-                                                   <div>
-                                                       <label className="text-[11px] text-gray-500 font-bold mb-1 block">รายละเอียดรายการ</label>
-                                                       <input className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.description} onChange={ev => { const newItems = [...editedItems]; newItems[idx].description = ev.target.value; setEditedItems(newItems); }} placeholder="ระบุรายละเอียด..." />
-                                                   </div>
-                                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                       <div>
-                                                           <label className="text-[11px] text-gray-500 font-bold mb-1 block">หมวดหมู่</label>
-                                                           <select className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.category} onChange={ev => { const newItems = [...editedItems]; newItems[idx].category = ev.target.value; setEditedItems(newItems); }}>
-                                                               {EXPENSE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.group} • {c.name}</option>)}
-                                                           </select>
-                                                       </div>
-                                                       <div>
-                                                           <label className="text-[11px] text-blue-500 font-bold mb-1 block">สาขา</label>
-                                                           <select className="w-full border border-blue-300 bg-blue-50 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={item.branchId || editingExpense.branchId} onChange={ev => { const newItems = [...editedItems]; newItems[idx].branchId = ev.target.value; setEditedItems(newItems); }}>
-                                                               <option value="HEADQUARTER">สำนักงานใหญ่</option>
-                                                               {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                                           </select>
-                                                       </div>
-                                                   </div>
+                              <button onClick={() => setEditingExpense(null)} className="text-gray-400 hover:text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors"><X size={18}/></button>
+                          </div>
+                          <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
+                               {editedItems.length === 0 && <div className="text-center text-gray-500 text-sm py-4">ไม่มีรายการย่อย (กรุณาเพิ่มรายการ)</div>}
+                               {editedItems.map((item, idx) => (
+                                   <div key={idx} className="flex flex-col p-4 md:p-5 border border-gray-200 rounded-xl bg-white shadow-sm gap-3 relative">
+                                       <button onClick={() => { const newItems = [...editedItems]; newItems.splice(idx, 1); setEditedItems(newItems); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-md transition-colors" title="ลบรายการนี้"><Trash2 size={16}/></button>
+                                       <div className="flex flex-col lg:flex-row gap-4 lg:pr-10">
+                                           <div className="flex-1 space-y-3">
+                                               <div>
+                                                   <label className="text-[11px] text-gray-500 font-bold mb-1 block">รายละเอียดรายการ</label>
+                                                   <input className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.description} onChange={ev => { const newItems = [...editedItems]; newItems[idx].description = ev.target.value; setEditedItems(newItems); }} placeholder="ระบุรายละเอียด..." />
                                                </div>
-                                               <div className="w-full lg:w-48 flex flex-col justify-end">
-                                                   <label className="text-[11px] text-gray-500 font-bold mb-1 block">จำนวนเงิน (บาท)</label>
-                                                   <input type="number" step="0.01" min="0" className="w-full border border-blue-300 p-2 md:p-2.5 rounded-lg text-sm text-right font-bold text-blue-700 bg-blue-50/30 focus:ring-2 focus:ring-blue-400 outline-none" value={item.amount} onChange={ev => { const newItems = [...editedItems]; newItems[idx].amount = ev.target.value; setEditedItems(newItems); }} placeholder="0.00" />
+                                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                   <div>
+                                                       <label className="text-[11px] text-gray-500 font-bold mb-1 block">หมวดหมู่</label>
+                                                       <select className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.category} onChange={ev => { const newItems = [...editedItems]; newItems[idx].category = ev.target.value; setEditedItems(newItems); }}>
+                                                           {EXPENSE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.group} • {c.name}</option>)}
+                                                       </select>
+                                                   </div>
+                                                   <div>
+                                                       <label className="text-[11px] text-blue-500 font-bold mb-1 block">สาขา</label>
+                                                       <select className="w-full border border-blue-300 bg-blue-50 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={item.branchId || editingExpense.branchId} onChange={ev => { const newItems = [...editedItems]; newItems[idx].branchId = ev.target.value; setEditedItems(newItems); }}>
+                                                           <option value="HEADQUARTER">สำนักงานใหญ่</option>
+                                                           {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                       </select>
+                                                   </div>
                                                </div>
                                            </div>
+                                           <div className="w-full lg:w-48 flex flex-col justify-end">
+                                               <label className="text-[11px] text-gray-500 font-bold mb-1 block">จำนวนเงิน (บาท)</label>
+                                               <input type="number" step="0.01" min="0" className="w-full border border-blue-300 p-2 md:p-2.5 rounded-lg text-sm text-right font-bold text-blue-700 bg-blue-50/30 focus:ring-2 focus:ring-blue-400 outline-none" value={item.amount} onChange={ev => { const newItems = [...editedItems]; newItems[idx].amount = ev.target.value; setEditedItems(newItems); }} placeholder="0.00" />
+                                           </div>
                                        </div>
-                                   ))}
-                                   <div className="flex justify-center mt-4">
-                                       <button onClick={() => setEditedItems([...editedItems, { id: Date.now(), description: '', category: 'fixed_other', amount: '', branchId: editingExpense.branchId || 'HEADQUARTER', date: new Date().toISOString().split('T')[0] }])} className="flex items-center gap-2 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 px-5 py-3 rounded-xl font-bold transition-colors shadow-sm">
-                                           <PlusCircle size={18} /> เพิ่มรายการย่อยใหม่
-                                       </button>
                                    </div>
-                              </div>
-                              <div className="px-6 py-4 border-t bg-white flex justify-end gap-3 shrink-0">
-                                   <button onClick={() => setEditingExpense(null)} className="px-6 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">ยกเลิก</button>
-                                   <button onClick={async () => {
-                                       if (editedItems.some(i => !i.description.trim() || !i.amount)) return showAlert('กรุณากรอก รายละเอียด และ จำนวนเงิน ให้ครบทุกรายการ', 'error');
-                                       if (editedItems.length === 0) return showAlert('ต้องมีรายการย่อยอย่างน้อย 1 รายการ', 'error');
-                                       setUpdating(true);
-                                       try {
-                                           const newTotal = editedItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-                                           await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', editingExpense.id), {
-                                               items: editedItems,
-                                               amount: newTotal
-                                           });
-                                           setEditingExpense(null);
-                                           showAlert('บันทึกการแก้ไขสำเร็จ', 'success');
-                                       } catch (err) { showAlert('เกิดข้อผิดพลาด: ' + err.message, 'error'); }
-                                       setUpdating(false);
-                                   }} disabled={updating} className="px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-colors disabled:opacity-50 flex items-center gap-2">
-                                       {updating ? 'กำลังบันทึก...' : <><CheckCircle size={18}/> บันทึกการเปลี่ยนแปลง</>}
+                               ))}
+                               <div className="flex justify-center mt-4">
+                                   <button onClick={() => setEditedItems([...editedItems, { id: Date.now(), description: '', category: 'fixed_other', amount: '', branchId: editingExpense.branchId || 'HEADQUARTER', date: new Date().toISOString().split('T')[0] }])} className="flex items-center gap-2 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 px-5 py-3 rounded-xl font-bold transition-colors shadow-sm">
+                                       <PlusCircle size={18} /> เพิ่มรายการย่อยใหม่
                                    </button>
-                              </div>
+                               </div>
+                          </div>
+                          <div className="px-6 py-4 border-t bg-white flex justify-end gap-3 shrink-0">
+                               <button onClick={() => setEditingExpense(null)} className="px-6 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                               <button onClick={async () => {
+                                   if (editedItems.some(i => !i.description.trim() || !i.amount)) return showAlert('กรุณากรอก รายละเอียด และ จำนวนเงิน ให้ครบทุกรายการ', 'error');
+                                   if (editedItems.length === 0) return showAlert('ต้องมีรายการย่อยอย่างน้อย 1 รายการ', 'error');
+                                   setUpdating(true);
+                                   try {
+                                       const newTotal = editedItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+                                       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', editingExpense.id), {
+                                           items: editedItems,
+                                           amount: newTotal
+                                       });
+                                       setEditingExpense(null);
+                                       showAlert('บันทึกการแก้ไขสำเร็จ', 'success');
+                                   } catch (err) { showAlert('เกิดข้อผิดพลาด: ' + err.message, 'error'); }
+                                   setUpdating(false);
+                               }} disabled={updating} className="px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-colors disabled:opacity-50 flex items-center gap-2">
+                                   {updating ? 'กำลังบันทึก...' : <><CheckCircle size={18}/> บันทึกการเปลี่ยนแปลง</>}
+                               </button>
                           </div>
                       </div>
-                   )}
-                </div>
-              );
-            };
+                  </div>
+               )}
+            </div>
+          );
+        };
 
         const SettingsView = ({ user }) => {
           const { showAlert } = useContext(UIContext);
@@ -2368,7 +2393,6 @@
 
           return (
             <div className="flex h-screen paw-bg font-sans overflow-hidden">
-              {/* Desktop Sidebar */}
               <aside className={`hidden md:flex flex-col bg-white/90 backdrop-blur-md shadow-xl border-r border-pink-200 z-10 sidebar-transition relative ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
                 <div className={`p-6 border-b border-pink-100 flex items-center ${isSidebarCollapsed ? 'justify-center px-0 flex-col gap-2' : 'gap-3'}`}>
                   <button 
@@ -2429,7 +2453,6 @@
                 </div>
               </aside>
               
-              {/* Mobile Top Header */}
               <div className="md:hidden fixed top-0 w-full bg-white/95 backdrop-blur-md shadow-sm z-30 flex items-center justify-between p-3 px-5 border-b border-pink-100">
                 <div className="flex items-center gap-2">
                   <div className="bg-pink-100 p-1.5 rounded-lg text-pink-600"><Cat size={20} /></div>
@@ -2447,12 +2470,14 @@
                 </div>
               </div>
 
-              {/* Main Content Area */}
               <main className="flex-1 overflow-auto p-4 pt-20 pb-24 md:p-8 md:pt-8 md:pb-8 relative w-full scrollbar-thin scrollbar-thumb-pink-200">
-                <div className="max-w-6xl mx-auto relative z-10 animate-in fade-in">{renderContent()}</div>
+                <div className="max-w-6xl mx-auto relative z-10 animate-in fade-in">
+                  <ErrorBoundary key={view}>
+                     {renderContent()}
+                  </ErrorBoundary>
+                </div>
               </main>
 
-              {/* Mobile Bottom Navigation */}
               <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-pink-100 flex justify-around items-end pb-safe pt-2 px-2 z-40 mobile-bottom-nav">
                  <button onClick={() => {setView('dashboard'); setIsMobileMenuOpen(false);}} className={`flex flex-col items-center justify-center p-2 w-[20%] transition-all ${view==='dashboard'?'text-pink-600 -translate-y-1':'text-gray-400 hover:text-pink-400'}`}>
                     <div className={`p-1.5 rounded-xl ${view==='dashboard'?'bg-pink-50':''}`}><Home size={22} /></div>
@@ -2480,7 +2505,6 @@
                  </button>
               </div>
 
-              {/* Mobile Side Menu Overlay */}
               {isMobileMenuOpen && (
                 <div className="fixed inset-0 bg-pink-900/40 backdrop-blur-sm z-50 md:hidden flex justify-end" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="h-full w-72 bg-white shadow-2xl p-0 flex flex-col animate-in slide-in-from-right-8" onClick={e => e.stopPropagation()}>
