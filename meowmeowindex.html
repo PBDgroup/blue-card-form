@@ -27,17 +27,23 @@
     </script>
 
     <style>
-        .paw-bg { background-color: #fce7f3; }
+        .paw-bg {
+            background-color: #fce7f3;
+        }
+        /* Custom Scrollbar for better UI */
         .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 20px; }
         .scrollbar-thumb-pink-200::-webkit-scrollbar-thumb { background-color: #fbcfe8; }
         .scrollbar-thumb-gray-200::-webkit-scrollbar-thumb { background-color: #e5e7eb; }
         
+        /* Mobile Optimizations */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         }
         .mobile-bottom-nav { box-shadow: 0 -4px 20px -5px rgba(0,0,0,0.08); }
+        
+        /* Sidebar transition */
         .sidebar-transition { transition: width 0.3s ease-in-out; }
     </style>
 </head>
@@ -159,63 +165,6 @@
           PAID_CASH: { label: 'รับเงินสดแล้ว', color: 'bg-emerald-100 text-emerald-800', lineText: 'รับเงินสดเรียบร้อย' },
           REJECTED: { label: 'ไม่อนุมัติ', color: 'bg-red-100 text-red-800', lineText: 'ถูกปฏิเสธ' }
         };
-
-        // ป้องกันหน้าจอขาว 100%: ฟังก์ชันจัดรูปแบบวันที่ปลอดภัยที่สุด
-        const safeFormatDate = (dateVal, format = 'date') => {
-            if (!dateVal) return '-';
-            try {
-                let d;
-                if (dateVal.seconds) d = new Date(dateVal.seconds * 1000);
-                else if (dateVal instanceof Date) d = dateVal;
-                else d = new Date(dateVal);
-                
-                if (isNaN(d.getTime())) return '-';
-                
-                if (format === 'time') return d.toLocaleTimeString('th-TH');
-                if (format === 'datetime') return d.toLocaleString('th-TH');
-                if (format === 'iso') return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                return d.toLocaleDateString('th-TH');
-            } catch(e) { return '-'; }
-        };
-
-        // ป้องกันหน้าจอขาว 100%: ฟังก์ชันจัดรูปแบบสถานะปลอดภัยที่สุด
-        const getSafeStatus = (statusVal) => {
-            if (!statusVal) return { label: 'ไม่ทราบ', color: 'bg-gray-100 text-gray-500', lineText: 'ไม่ทราบสถานะ' };
-            const key = String(statusVal).toUpperCase();
-            return STATUS[key] || { label: String(statusVal), color: 'bg-gray-100 text-gray-800', lineText: String(statusVal) };
-        };
-
-        // Error Boundary Component: ป้องกันการพังทั้งหน้าจอ (กันหน้าจอขาว)
-        class ErrorBoundary extends React.Component {
-          constructor(props) {
-            super(props);
-            this.state = { hasError: false, error: null };
-          }
-          static getDerivedStateFromError(error) {
-            return { hasError: true, error };
-          }
-          componentDidCatch(error, errorInfo) {
-            console.error("UI Rendering Error Captured:", error, errorInfo);
-          }
-          render() {
-            if (this.state.hasError) {
-              return (
-                <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-red-50 rounded-2xl border border-red-200 text-center animate-in fade-in m-4">
-                  <i className="fas fa-triangle-exclamation text-6xl text-red-400 mb-6 drop-shadow-sm"></i>
-                  <h2 className="text-2xl font-black text-red-800 mb-2">แสดงผลข้อมูลไม่สำเร็จ</h2>
-                  <p className="text-red-600 mb-6 font-medium max-w-md">ระบบตรวจพบข้อมูลบางส่วนในฐานข้อมูลเก่าชำรุดหรือมีรูปแบบไม่ถูกต้อง ทำให้การแสดงผลหน้านี้ขัดข้องชั่วคราว</p>
-                  <button 
-                    onClick={() => { this.setState({ hasError: false }); window.location.reload(); }} 
-                    className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all flex items-center gap-2 active:scale-95"
-                  >
-                    <i className="fas fa-rotate"></i> โหลดหน้าใหม่อีกครั้ง
-                  </button>
-                </div>
-              );
-            }
-            return this.props.children;
-          }
-        }
 
         const UIContext = createContext();
 
@@ -362,7 +311,7 @@
         };
 
         const createExpenseFlexMessage = (expense, newStatus, slipImage = null, approverName = null, companyName = null) => {
-          const statusInfo = getSafeStatus(newStatus);
+          const statusInfo = STATUS[newStatus.toUpperCase()] || STATUS.PENDING;
           const colorCode = newStatus === 'transferred' ? '#4ade80' : newStatus === 'paid_cash' ? '#10b981' : newStatus === 'rejected' ? '#f87171' : newStatus === 'waiting_transfer' ? '#60a5fa' : '#fbbf24';
 
           const safeItems = Array.isArray(expense.items) ? expense.items : [];
@@ -377,7 +326,11 @@
           if (safeItems.length > 3) itemsPreview.push({ type: 'text', text: `... และอีก ${safeItems.length - 3} รายการ`, size: 'xxs', color: '#aaaaaa', margin: 'xs', align: 'center' });
           if (itemsPreview.length === 0) itemsPreview.push({ type: 'text', text: '-', size: 'xxs', color: '#aaaaaa' });
 
-          let dateDisplay = safeFormatDate(expense.date);
+          let dateDisplay = '-';
+          try {
+            let d = expense.date && typeof expense.date.seconds === 'number' ? new Date(expense.date.seconds * 1000) : (expense.date instanceof Date ? expense.date : new Date());
+            dateDisplay = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+          } catch (e) {}
 
           const flexMessage = {
             type: 'flex', altText: `สถานะใบเบิก ${expense.runNumber || ''}: ${statusInfo.lineText}`,
@@ -629,9 +582,11 @@
             return expenses.filter(e => {
               let matches = true;
               if (dateRange.start && dateRange.end) {
-                // แก้ไขการเปรียบเทียบวันที่ให้ปลอดภัย
-                const dateStr = safeFormatDate(e.date, 'iso');
-                if (dateStr !== '-' && (dateStr < dateRange.start || dateStr > dateRange.end)) matches = false;
+                const expenseDate = e.date?.seconds ? new Date(e.date.seconds * 1000) : new Date(e.date);
+                const start = new Date(dateRange.start);
+                const end = new Date(dateRange.end);
+                end.setHours(23, 59, 59, 999); 
+                if (expenseDate < start || expenseDate > end) matches = false;
               }
               if (filterBranch !== 'ALL') {
                   const hasMatchingItem = e.items && Array.isArray(e.items) && e.items.some(i => (i.branchId || e.branchId) === filterBranch);
@@ -644,11 +599,11 @@
 
           const calculateSum = (statusList) => {
               return filteredExpenses.reduce((sum, e) => {
-                  if (statusList.includes(getSafeStatus(e.status).label === 'ไม่ทราบ' ? e.status : e.status.toLowerCase())) {
+                  if (statusList.includes(e.status)) {
                       if (filterBranch !== 'ALL' && e.items && Array.isArray(e.items)) {
-                          return sum + e.items.reduce((itemSum, item) => (item.branchId || e.branchId) === filterBranch ? itemSum + (parseFloat(item.amount) || 0) : itemSum, 0);
+                          return sum + e.items.reduce((itemSum, item) => (item.branchId || e.branchId) === filterBranch ? itemSum + parseFloat(item.amount) : itemSum, 0);
                       }
-                      return sum + (parseFloat(e.amount) || 0);
+                      return sum + parseFloat(e.amount);
                   }
                   return sum;
               }, 0);
@@ -661,17 +616,17 @@
 
           const categoryData = useMemo(() => {
             const data = {};
-            filteredExpenses.filter(e => getSafeStatus(e.status).label !== 'ไม่อนุมัติ').forEach(e => {
+            filteredExpenses.filter(e => e.status !== 'rejected').forEach(e => {
               if (e.items && Array.isArray(e.items) && e.items.length > 0) {
                 e.items.forEach(item => { 
                     const itemBranch = item.branchId || e.branchId;
                     if (filterBranch === 'ALL' || itemBranch === filterBranch) {
-                        data[item.category] = (data[item.category] || 0) + (parseFloat(item.amount) || 0); 
+                        data[item.category] = (data[item.category] || 0) + parseFloat(item.amount); 
                     }
                 });
               } else {
                 if (filterBranch === 'ALL' || e.branchId === filterBranch) {
-                    data[e.category] = (data[e.category] || 0) + (parseFloat(e.amount) || 0);
+                    data[e.category] = (data[e.category] || 0) + parseFloat(e.amount);
                 }
               }
             });
@@ -689,16 +644,16 @@
 
           const branchData = useMemo(() => {
             const data = {};
-            filteredExpenses.filter(e => getSafeStatus(e.status).label !== 'ไม่อนุมัติ').forEach(e => {
+            filteredExpenses.filter(e => e.status !== 'rejected').forEach(e => {
               if (e.items && Array.isArray(e.items)) {
                 e.items.forEach(item => {
                     const itemBranch = item.branchId || e.branchId;
                     const branchName = itemBranch === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === itemBranch)?.name || 'ไม่ระบุ');
-                    data[branchName] = (data[branchName] || 0) + (parseFloat(item.amount) || 0);
+                    data[branchName] = (data[branchName] || 0) + parseFloat(item.amount);
                 });
               } else {
                 const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || 'ไม่ระบุ');
-                data[branchName] = (data[branchName] || 0) + (parseFloat(e.amount) || 0);
+                data[branchName] = (data[branchName] || 0) + parseFloat(e.amount);
               }
             });
             return Object.keys(data).map(key => ({ name: key, value: data[key] })).sort((a,b) => b.value - a.value).filter(d => d.value > 0);
@@ -800,13 +755,13 @@
                            <p className="font-medium text-gray-800 text-sm truncate">{e.description}</p>
                            <div className="flex items-center gap-2 mt-1">
                              <span className="text-[10px] text-blue-500 bg-blue-50 px-1 rounded font-mono shrink-0">{e.runNumber}</span>
-                             <span className="text-[10px] text-gray-500 shrink-0">{safeFormatDate(e.date)}</span>
+                             <span className="text-[10px] text-gray-500 shrink-0">{e.date?.seconds ? new Date(e.date.seconds * 1000).toLocaleDateString('th-TH') : '-'}</span>
                            </div>
                          </div>
                          <div className="text-right shrink-0">
-                           <p className="font-bold text-gray-800 text-sm">฿{(parseFloat(e.amount) || 0).toLocaleString()}</p>
-                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${getSafeStatus(e.status).color}`}>
-                             {getSafeStatus(e.status).label}
+                           <p className="font-bold text-gray-800 text-sm">฿{parseFloat(e.amount).toLocaleString()}</p>
+                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${STATUS[e.status?.toUpperCase()]?.color || 'bg-gray-100'}`}>
+                             {STATUS[e.status?.toUpperCase()]?.label || e.status}
                            </span>
                          </div>
                        </div>
@@ -1003,7 +958,6 @@
                              return true;
                          }
                      }
-                     
                      if (item.refNumbers && refNumbers.length > 0) {
                          for (const ref of refNumbers) {
                              if (item.refNumbers.includes(ref)) {
@@ -1012,7 +966,6 @@
                              }
                          }
                      }
-
                      if (item.extData) {
                          const oldExt = item.extData;
                          const hasSameDate = extractedDates.some(d => oldExt.dates?.includes(d));
@@ -1024,13 +977,11 @@
                               duplicateReason = `ตรวจพบ "วันที่, เวลา และยอดเงิน" ตรงกับบิลเดิมในระบบ (สงสัยบิลน้ำมัน/ชาร์จรถ ซ้ำ)`;
                               return true;
                          }
-
                          if (hasSameDate && hasSameAmount && hasSameKeyword && extractedDates.length > 0 && extractedAmounts.length > 0 && extractedKeywords.length > 0) {
                               duplicateReason = `ตรวจพบ "วันที่, ยอดเงิน และรายการสินค้า(เช่น ชนิดน้ำมัน/EV)" ตรงกับบิลเดิมในระบบ`;
                               return true;
                          }
                      }
-                     
                      if (item.uniqueDigits && uniqueDigits.length > 0) {
                          let matchCount = 0;
                          for(const d of uniqueDigits) {
@@ -1041,7 +992,6 @@
                              return true;
                          }
                      }
-                     
                      if (item.uniqueThai && uniqueThai.length > 0) {
                          let matchCount = 0;
                          for(const w of uniqueThai) {
@@ -1052,7 +1002,6 @@
                              return true;
                          }
                      }
-                     
                      if (item.refNumbers && refNumbers.length > 0) {
                          for (const ref of refNumbers) {
                              if (item.refNumbers.includes(ref)) {
@@ -1061,7 +1010,6 @@
                              }
                          }
                      }
-
                      return false;
                  };
 
@@ -1083,7 +1031,7 @@
                  const applyReceipt = () => {
                      setCurrentItem(prev => ({ 
                          ...prev, 
-                         receipt: base64Data, 
+                         receipt: base64Data,
                          receiptSize: sizeInKB,
                          aHash: aHash,
                          uniqueDigits: uniqueDigits,
@@ -1132,7 +1080,7 @@
                 const branchSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'branches', branchId));
                 if (branchSnap.exists()) {
                      const bData = branchSnap.data();
-                     prefix = bData.location || (bData.name ? String(bData.name).substring(0, 3).toUpperCase() : 'BR');
+                     prefix = bData.location || (bData.name ? bData.name.substring(0, 3).toUpperCase() : 'BR');
                 }
             }
             const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'expenses_running');
@@ -1159,7 +1107,7 @@
                   if (item.receipt && item.receipt.startsWith('data:image/')) {
                       const path = `expenses/${appId}/receipts/${Date.now()}_${index}.jpg`;
                       const url = await uploadImageToStorage(item.receipt, path, settings);
-                      return { ...item, receipt: url }; 
+                      return { ...item, receipt: url };
                   }
                   return item;
               }));
@@ -1214,7 +1162,10 @@
                   
                   <form onSubmit={handleAddItem}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">วันที่ <span className="text-red-500">*</span></label><input type="date" required className="w-full p-2 border rounded-lg text-sm" value={currentItem.date} onChange={e => setCurrentItem({...currentItem, date: e.target.value})}/></div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">วันที่ <span className="text-red-500">*</span></label>
+                            <input type="date" required className="w-full p-2 border rounded-lg text-sm" value={currentItem.date} onChange={e => setCurrentItem({...currentItem, date: e.target.value})}/>
+                        </div>
                         <div className="md:col-span-2">
                             <label className="block text-xs font-medium text-gray-700 mb-1">หมวดหมู่ <span className="text-red-500">*</span></label>
                             <select className="w-full p-2 border rounded-lg text-sm" required value={selectedGroup} onChange={e => {
@@ -1233,17 +1184,21 @@
                                 {EXPENSE_CATEGORIES.filter(c => c.group === selectedGroup).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
-                        {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXCLUSIVE) && (
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-medium text-blue-700 mb-1">สาขา <span className="text-red-500">*</span></label>
-                                <select className="w-full p-2 border border-blue-200 bg-blue-50 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={currentItem.branchId} onChange={e => setCurrentItem({...currentItem, branchId: e.target.value})}>
-                                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                    <option value="HEADQUARTER">สำนักงานใหญ่</option>
-                                </select>
-                            </div>
-                        )}
-                        <div className={`md:col-span-${(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXCLUSIVE) ? '3' : '5'}`}><label className="block text-xs font-medium text-gray-700 mb-1">รายละเอียด <span className="text-red-500">*</span></label><input type="text" required className="w-full p-2 border rounded-lg text-sm" placeholder="รายละเอียดค่าใช้จ่าย" value={currentItem.description} onChange={e => setCurrentItem({...currentItem, description: e.target.value})}/></div>
-                        <div className="md:col-span-3"><label className="block text-xs font-medium text-gray-700 mb-1">จำนวนเงิน <span className="text-red-500">*</span></label><input type="number" required min="0.01" step="0.01" className="w-full p-2 border rounded-lg text-sm" placeholder="0.00" value={currentItem.amount} onChange={e => setCurrentItem({...currentItem, amount: e.target.value})}/></div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-medium text-blue-700 mb-1">สาขา <span className="text-red-500">*</span></label>
+                            <select className="w-full p-2 border border-blue-200 bg-blue-50 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={currentItem.branchId} onChange={e => setCurrentItem({...currentItem, branchId: e.target.value})}>
+                                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                <option value="HEADQUARTER">สำนักงานใหญ่</option>
+                            </select>
+                        </div>
+                        <div className="md:col-span-3">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">รายละเอียด <span className="text-red-500">*</span></label>
+                            <input type="text" required className="w-full p-2 border rounded-lg text-sm" placeholder="รายละเอียดค่าใช้จ่าย" value={currentItem.description} onChange={e => setCurrentItem({...currentItem, description: e.target.value})}/>
+                        </div>
+                        <div className="md:col-span-3">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">จำนวนเงิน <span className="text-red-500">*</span></label>
+                            <input type="number" required min="0.01" step="0.01" className="w-full p-2 border rounded-lg text-sm" placeholder="0.00" value={currentItem.amount} onChange={e => setCurrentItem({...currentItem, amount: e.target.value})}/>
+                        </div>
                         <div className="md:col-span-5">
                             <label className="block text-xs font-medium text-gray-700 mb-1">แนบรูปใบเสร็จ {user.role === ROLES.EMPLOYEE && <span className="text-red-500">*</span>}</label>
                             <div className="flex items-center gap-2">
@@ -1263,7 +1218,9 @@
                                 )}
                             </div>
                         </div>
-                        <div className="md:col-span-4"><button type="submit" disabled={!isFormValid || isAnalyzing} className="w-full bg-pink-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-pink-700 active:bg-pink-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-transparent disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 shadow-sm"><PawPrint size={18} /> เพิ่มลงรายการ</button></div>
+                        <div className="md:col-span-4">
+                            <button type="submit" disabled={!isFormValid || isAnalyzing} className="w-full bg-pink-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-pink-700 active:bg-pink-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-transparent disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 shadow-sm"><PawPrint size={18} /> เพิ่มลงรายการ</button>
+                        </div>
                     </div>
                   </form>
                </div>
@@ -1280,11 +1237,11 @@
                                         <td className="p-4 text-sm">
                                             <div className="font-medium text-gray-800">{item.description}</div>
                                             <div className="text-xs text-gray-500">
-                                                {safeFormatDate(item.date)} • {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} - ${cat.name}` : item.category; })()} 
-                                                {(user.role === ROLES.MANAGER || user.role === ROLES.ADMIN || user.role === ROLES.EXCLUSIVE) && (<span className="ml-2 text-blue-600 font-semibold border border-blue-200 bg-blue-50 px-1 rounded">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id === item.branchId)?.name}</span>)}
+                                                {item.date} • {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} - ${cat.name}` : item.category; })()} 
+                                                <span className="ml-2 text-blue-600 font-semibold border border-blue-200 bg-blue-50 px-1 rounded">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id === item.branchId)?.name}</span>
                                             </div>
                                         </td>
-                                        <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{(parseFloat(item.amount) || 0).toLocaleString()}</td>
+                                        <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(item.amount).toLocaleString()}</td>
                                         <td className="p-4 text-right w-24">
                                             <div className="flex items-center justify-end gap-2">
                                                 {item.receipt && (
@@ -1362,13 +1319,13 @@
                         <React.Fragment key={e.id}>
                           <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}>
                             <td className="p-4 text-sm text-gray-600">
-                                <div>{safeFormatDate(e.date)}</div>
+                                <div>{e.date?.seconds ? new Date(e.date.seconds * 1000).toLocaleDateString('th-TH') : '-'}</div>
                                 {e.runNumber && <div className="text-xs text-blue-500 font-bold mt-1 bg-blue-50 inline-block px-2 rounded">{e.runNumber}</div>}
                             </td>
                             <td className="p-4 text-sm font-medium text-gray-800">{e.description}{e.items && Array.isArray(e.items) && (<div className="text-xs text-gray-400 font-normal">ประกอบด้วย {e.items.length} รายการย่อย</div>)}</td>
                             <td className="p-4 text-sm text-gray-600">{e.userName}{user.role !== ROLES.EMPLOYEE && (<span className="block text-xs text-gray-400">{getBranchName(e.branchId)}</span>)}</td>
-                            <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{(parseFloat(e.amount) || 0).toLocaleString()}</td>
-                            <td className="p-4 text-center"><span className={`inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${getSafeStatus(e.status).color}`}>{getSafeStatus(e.status).label}</span></td>
+                            <td className="p-4 text-sm font-bold text-gray-800 text-right">฿{parseFloat(e.amount).toLocaleString()}</td>
+                            <td className="p-4 text-center"><span className={`inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${STATUS[e.status?.toUpperCase()]?.color || 'bg-gray-100'}`}>{STATUS[e.status?.toUpperCase()]?.label || e.status}</span></td>
                             <td className="p-4 text-gray-400">{expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}</td>
                           </tr>
                           {expandedId === e.id && (
@@ -1385,7 +1342,7 @@
                                     {(e.status === 'transferred' || e.status === 'paid_cash') && (
                                       <div className="bg-green-50 px-4 py-3 border-b border-green-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                          <div className="flex items-center gap-2 text-green-800 font-bold text-sm">
-                                            <CheckCircle size={18} /> {e.status === 'paid_cash' ? 'รับเงินสดแล้วเมื่อ' : 'โอนเงินแล้วเมื่อ'} {safeFormatDate(e.transferDate, 'datetime')}
+                                            <CheckCircle size={18} /> {e.status === 'paid_cash' ? 'รับเงินสดแล้วเมื่อ' : 'โอนเงินแล้วเมื่อ'} {e.transferDate?.seconds ? new Date(e.transferDate.seconds * 1000).toLocaleString('th-TH') : '-'}
                                          </div>
                                          {e.transferSlip && (
                                            <button onClick={(ev) => { ev.stopPropagation(); setViewImage(e.transferSlip); }} className="text-green-600 underline text-sm flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-green-200">
@@ -1400,7 +1357,40 @@
                                       </div>
                                     )}
                                     <div className="bg-gray-100 px-4 py-2 border-b text-xs font-semibold text-gray-600 flex items-center gap-2"><List size={14}/> รายละเอียดรายการย่อย</div>
-                                    {e.items && Array.isArray(e.items) ? (<div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]"><thead><tr className="border-b text-gray-500 bg-gray-50"><th className="p-3 text-left w-10">#</th><th className="p-3 text-left">รายการ</th><th className="p-3 text-left">กลุ่ม/รายการ/สาขา</th><th className="p-3 text-right">จำนวนเงิน</th><th className="p-3 text-center">หลักฐาน</th></tr></thead><tbody>{e.items.map((item, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-gray-50"><td className="p-3 text-gray-500">{idx+1}</td><td className="p-3"><div>{item.description}</div><div className="text-xs text-gray-400">{safeFormatDate(item.date)}</div></td><td className="p-3 text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700 text-xs">{cat.group}</div><div>{cat.name}</div></> : <div>{item.category}</div>; })()}{(item.branchId && item.branchId !== e.branchId) && (<div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>)}</td><td className="p-3 text-right font-medium">฿{(parseFloat(item.amount) || 0).toLocaleString()}</td><td className="p-3 text-center">{item.receipt ? (<button onClick={(ev) => { ev.stopPropagation(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 flex items-center justify-center gap-1 text-xs mx-auto"><ImageIcon size={14}/> ดูรูป</button>) : <span className="text-gray-300">-</span>}</td></tr>))}</tbody></table></div>) : (<div className="p-4 text-gray-500 text-center">ไม่มีรายละเอียดรายการย่อย</div>)}
+                                    {e.items && Array.isArray(e.items) ? (
+                                      <div className="overflow-x-auto">
+                                        <table className="w-full text-sm min-w-[500px]">
+                                          <thead>
+                                            <tr className="border-b text-gray-500 bg-gray-50">
+                                              <th className="p-3 text-left w-10">#</th>
+                                              <th className="p-3 text-left">รายการ</th>
+                                              <th className="p-3 text-left">กลุ่ม/รายการ/สาขา</th>
+                                              <th className="p-3 text-right">จำนวนเงิน</th>
+                                              <th className="p-3 text-center">หลักฐาน</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {e.items.map((item, idx) => (
+                                              <tr key={idx} className="border-b last:border-0 hover:bg-gray-50">
+                                                <td className="p-3 text-gray-500">{idx+1}</td>
+                                                <td className="p-3">
+                                                  <div>{item.description}</div>
+                                                  <div className="text-xs text-gray-400">{item.date}</div>
+                                                </td>
+                                                <td className="p-3 text-gray-500">
+                                                  {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? <><div className="font-semibold text-gray-700 text-xs">{cat.group}</div><div>{cat.name}</div></> : <div>{item.category}</div>; })()}
+                                                  {(item.branchId && item.branchId !== e.branchId) && (<div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>)}
+                                                </td>
+                                                <td className="p-3 text-right font-medium">฿{parseFloat(item.amount).toLocaleString()}</td>
+                                                <td className="p-3 text-center">
+                                                  {item.receipt ? (<button onClick={(ev) => { ev.stopPropagation(); setViewImage(item.receipt); }} className="text-blue-500 hover:text-blue-700 flex items-center justify-center gap-1 text-xs mx-auto"><ImageIcon size={14}/> ดูรูป</button>) : <span className="text-gray-300">-</span>}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    ) : (<div className="p-4 text-gray-500 text-center">ไม่มีรายละเอียดรายการย่อย</div>)}
                                  </div>
                               </td>
                             </tr>
@@ -1515,14 +1505,14 @@
                                 <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2 text-xs md:text-sm text-gray-600">
                                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] md:text-xs font-mono font-bold border border-blue-100">{e.runNumber}</span>
                                      <span className="flex items-center gap-1 text-[10px] md:text-xs"><UserCircle size={12}/> {e.userName}</span>
-                                     <span className="flex items-center gap-1 text-[10px] md:text-xs text-gray-400"><History size={12}/> {safeFormatDate(e.date)}</span>
+                                     <span className="flex items-center gap-1 text-[10px] md:text-xs text-gray-400"><History size={12}/> {e.date?.seconds ? new Date(e.date.seconds * 1000).toLocaleDateString('th-TH') : '-'}</span>
                                 </div>
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 md:hidden">
                                     {expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between w-full md:w-auto md:px-4 text-right">
-                                <span className="block font-bold text-blue-600 text-base md:text-lg">฿{(parseFloat(e.amount) || 0).toLocaleString()}</span>
+                                <span className="block font-bold text-blue-600 text-base md:text-lg">฿{parseFloat(e.amount).toLocaleString()}</span>
                                 <div className="pl-2 text-gray-400 hidden md:block">
                                      {expandedId === e.id ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
                                 </div>
@@ -1549,26 +1539,24 @@
                                                 <button onClick={(ev) => { ev.stopPropagation(); const newItems = [...editedItems]; newItems.splice(idx, 1); setEditedItems(newItems); }} className="absolute top-2 right-2 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-md transition-colors" title="ลบรายการนี้"><Trash2 size={14}/></button>
                                                 <div className="flex flex-col sm:flex-row gap-3 pr-8">
                                                     <div className="flex-1 space-y-2">
-                                                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                                                            <div className="sm:col-span-1">
-                                                                <label className="text-[10px] text-gray-500 font-bold">วันที่</label>
-                                                                <input type="date" className="w-full border p-1.5 rounded text-sm focus:ring-1 focus:ring-blue-400 outline-none" value={item.date || (safeFormatDate(e.date, 'iso') !== '-' ? safeFormatDate(e.date, 'iso') : '')} onChange={ev => { const newItems = [...editedItems]; newItems[idx].date = ev.target.value; setEditedItems(newItems); }} />
-                                                            </div>
-                                                            <div className="sm:col-span-3">
-                                                                <label className="text-[10px] text-gray-500 font-bold">รายละเอียดรายการ</label>
-                                                                <input className="w-full border p-1.5 rounded text-sm focus:ring-1 focus:ring-blue-400 outline-none" value={item.description} onChange={ev => { const newItems = [...editedItems]; newItems[idx].description = ev.target.value; setEditedItems(newItems); }} placeholder="ระบุรายละเอียด..." />
-                                                            </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-gray-500 font-bold mb-1 block">รายละเอียดรายการ</label>
+                                                            <input className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.description} onChange={ev => { const newItems = [...editedItems]; newItems[idx].description = ev.target.value; setEditedItems(newItems); }} placeholder="ระบุรายละเอียด..." />
                                                         </div>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                             <div>
-                                                                <label className="text-[10px] text-gray-500 font-bold">หมวดหมู่</label>
-                                                                <select className="w-full border p-1.5 rounded text-sm" value={item.category} onChange={ev => { const newItems = [...editedItems]; newItems[idx].category = ev.target.value; setEditedItems(newItems); }}>
+                                                                <label className="text-[10px] text-gray-500 font-bold mb-1 block">วันที่</label>
+                                                                <input type="date" className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.date || ''} onChange={ev => { const newItems = [...editedItems]; newItems[idx].date = ev.target.value; setEditedItems(newItems); }} />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] text-gray-500 font-bold mb-1 block">หมวดหมู่</label>
+                                                                <select className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.category} onChange={ev => { const newItems = [...editedItems]; newItems[idx].category = ev.target.value; setEditedItems(newItems); }}>
                                                                     {EXPENSE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.group} • {c.name}</option>)}
                                                                 </select>
                                                             </div>
                                                             <div>
-                                                                <label className="text-[10px] text-blue-500 font-bold">สาขา</label>
-                                                                <select className="w-full border border-blue-200 bg-blue-50 p-1.5 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" value={item.branchId || e.branchId} onChange={ev => { const newItems = [...editedItems]; newItems[idx].branchId = ev.target.value; setEditedItems(newItems); }}>
+                                                                <label className="text-[10px] text-blue-500 font-bold mb-1 block">สาขา</label>
+                                                                <select className="w-full border border-blue-300 bg-blue-50 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={item.branchId || e.branchId} onChange={ev => { const newItems = [...editedItems]; newItems[idx].branchId = ev.target.value; setEditedItems(newItems); }}>
                                                                     <option value="HEADQUARTER">สำนักงานใหญ่</option>
                                                                     {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                                                                 </select>
@@ -1576,8 +1564,8 @@
                                                         </div>
                                                     </div>
                                                     <div className="w-full sm:w-32 flex flex-col justify-end">
-                                                        <label className="text-[10px] text-gray-500 font-bold">จำนวนเงิน (บาท)</label>
-                                                        <input type="number" step="0.01" min="0" className="w-full border p-1.5 rounded text-sm text-right font-bold text-blue-600" value={item.amount} onChange={ev => { const newItems = [...editedItems]; newItems[idx].amount = ev.target.value; setEditedItems(newItems); }} placeholder="0.00" />
+                                                        <label className="text-[10px] text-gray-500 font-bold mb-1 block">จำนวนเงิน (บาท)</label>
+                                                        <input type="number" step="0.01" min="0" className="w-full border border-blue-300 p-2 md:p-2.5 rounded-lg text-sm text-right font-bold text-blue-600 bg-blue-50/30 focus:ring-2 focus:ring-blue-400 outline-none" value={item.amount} onChange={ev => { const newItems = [...editedItems]; newItems[idx].amount = ev.target.value; setEditedItems(newItems); }} placeholder="0.00" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -1618,7 +1606,7 @@
                                         </div>
                                     </div>
                                 ) : (
-                                    e.items && Array.isArray(e.items) ? (e.items.map((item, idx) => (<div key={idx} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 border-b last:border-0 gap-2 sm:gap-0"><div><div className="text-sm font-medium text-gray-800">{item.description}</div><div className="text-xs text-gray-500">{(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} • ${cat.name}` : item.category; })()}</div>{(item.branchId && item.branchId !== e.branchId) && <div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>}</div><div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto"><span className="text-sm font-bold">฿{(parseFloat(item.amount) || 0).toLocaleString()}</span>{item.receipt && (<button onClick={(ev) => {ev.stopPropagation(); setViewImage(item.receipt);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded border"><ImageIcon size={16}/></button>)}</div></div>))) : <div className="p-3 text-gray-500 text-sm">ไม่มีรายการย่อย</div>
+                                    e.items && Array.isArray(e.items) ? (e.items.map((item, idx) => (<div key={idx} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 border-b last:border-0 gap-2 sm:gap-0"><div><div className="text-sm font-medium text-gray-800">{item.description}</div><div className="text-xs text-gray-500">{item.date} • {(() => { const cat = EXPENSE_CATEGORIES.find(c => c.id === item.category); return cat ? `${cat.group} • ${cat.name}` : item.category; })()}</div>{(item.branchId && item.branchId !== e.branchId) && <div className="text-[10px] text-blue-500 font-bold mt-0.5">{item.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : branches.find(b=>b.id===item.branchId)?.name}</div>}</div><div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto"><span className="text-sm font-bold">฿{parseFloat(item.amount).toLocaleString()}</span>{item.receipt && (<button onClick={(ev) => {ev.stopPropagation(); setViewImage(item.receipt);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded border"><ImageIcon size={16}/></button>)}</div></div>))) : <div className="p-3 text-gray-500 text-sm">ไม่มีรายการย่อย</div>
                                 )}
                            </div>
 
@@ -1628,7 +1616,7 @@
                                         <div className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2"><AlertCircle size={16} className={confirmAction.type === 'rejected' ? 'text-red-600' : 'text-green-600'}/> {confirmAction.type === 'waiting_transfer' ? 'ยืนยันอนุมัติ?' : confirmAction.type === 'transferred' ? 'ยืนยันการโอนเงิน?' : confirmAction.type === 'paid_cash' ? 'ยืนยันการรับเงินสด?' : 'ยืนยันปฏิเสธ?'}</div>
                                         {confirmAction.type === 'transferred' && (
                                            <div className="mb-2">
-                                              <label className="block text-[10px] md:text-xs text-gray-500 mb-1">
+                                              <label className="block text-[10px] md:text-xs text-gray-500 mb-1 block">
                                                   แนบสลิป (รูปภาพจะถูกส่งเข้า LINE พนักงานด้วย)
                                                   <span className="text-blue-500 font-bold ml-1">(ไม่บังคับ)</span>
                                               </label>
@@ -1714,12 +1702,12 @@
           const reportData = useMemo(() => {
             const flat = [];
             expenses.forEach(e => {
-               const expenseDateStr = safeFormatDate(e.date, 'iso');
-               if (dateRange.start && expenseDateStr !== '-' && expenseDateStr < dateRange.start) return;
-               if (dateRange.end && expenseDateStr !== '-' && expenseDateStr > dateRange.end) return;
+               const expenseDateStr = e.date?.seconds ? new Date(e.date.seconds * 1000).toISOString().split('T')[0] : (e.date instanceof Date ? e.date.toISOString().split('T')[0] : '');
+               if (dateRange.start && expenseDateStr < dateRange.start) return;
+               if (dateRange.end && expenseDateStr > dateRange.end) return;
                if (filterUser !== 'ALL' && e.userId !== filterUser) return;
 
-               const statusObj = getSafeStatus(e.status);
+               const statusObj = STATUS[e.status?.toUpperCase()] || { label: e.status, color: '' };
                const approverName = e.approverId ? (userMap[e.approverId] || 'Unknown ID') : '-';
                
                if (e.items && Array.isArray(e.items)) { 
@@ -1732,8 +1720,8 @@
                        const branchName = itemBranchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === itemBranchId)?.name || '-');
 
                        flat.push({ 
-                           id: e.id + '-' + item.id, expenseId: e.id, runNumber: e.runNumber, date: safeFormatDate(item.date) || expenseDateStr, description: item.description, 
-                           category: item.category, amount: parseFloat(item.amount) || 0, status: statusObj.label, statusColor: statusObj.color, 
+                           id: e.id + '-' + item.id, expenseId: e.id, runNumber: e.runNumber, date: item.date || expenseDateStr, description: item.description, 
+                           category: item.category, amount: parseFloat(item.amount), status: statusObj.label, statusColor: statusObj.color, 
                            branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status
                        }); 
                    }); 
@@ -1744,8 +1732,8 @@
                    const branchName = e.branchId === 'HEADQUARTER' ? 'สำนักงานใหญ่' : (branches.find(b => b.id === e.branchId)?.name || '-');
 
                    flat.push({ 
-                       id: e.id, expenseId: e.id, runNumber: e.runNumber, date: safeFormatDate(e.date), 
-                       description: e.description, category: e.category, amount: parseFloat(e.amount) || 0, status: statusObj.label, 
+                       id: e.id, expenseId: e.id, runNumber: e.runNumber, date: expenseDateStr || '-', 
+                       description: e.description, category: e.category, amount: parseFloat(e.amount), status: statusObj.label, 
                        statusColor: statusObj.color, branch: branchName, requester: e.userName, approver: approverName, rejectReason: e.rejectReason, statusRaw: e.status
                    }); 
                }
@@ -1791,7 +1779,7 @@
                   return [ 
                       item.runNumber || '-', 
                       item.date, 
-                      `"${(item.description || '').replace(/"/g, '""')}"`, 
+                      `"${item.description.replace(/"/g, '""')}"`, 
                       `"${cat ? cat.group : '-'}"`,
                       `"${cat ? cat.name : item.category}"`, 
                       item.amount, 
@@ -1824,7 +1812,7 @@
                   </div>
                   <div className="flex items-center gap-4 md:gap-6 flex-wrap xl:flex-nowrap w-full xl:w-auto">
                     <div className="flex flex-col bg-blue-50 p-2 rounded-lg border border-blue-100 flex-1 md:flex-none">
-                        <label className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1">งบประมาณรับมา (บาท)</label>
+                        <label className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1 block">งบประมาณรับมา (บาท)</label>
                         <input 
                             type="number" 
                             className="border-none rounded p-1 text-sm font-bold text-blue-900 focus:ring-2 focus:ring-blue-400 outline-none w-full md:w-32 bg-white" 
@@ -1940,17 +1928,15 @@
                                        <button onClick={() => { const newItems = [...editedItems]; newItems.splice(idx, 1); setEditedItems(newItems); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-md transition-colors" title="ลบรายการนี้"><Trash2 size={16}/></button>
                                        <div className="flex flex-col lg:flex-row gap-4 lg:pr-10">
                                            <div className="flex-1 space-y-3">
-                                               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                                                   <div className="sm:col-span-1">
-                                                       <label className="text-[11px] text-gray-500 font-bold mb-1 block">วันที่</label>
-                                                       <input type="date" className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.date || (safeFormatDate(editingExpense.date, 'iso') !== '-' ? safeFormatDate(editingExpense.date, 'iso') : '')} onChange={ev => { const newItems = [...editedItems]; newItems[idx].date = ev.target.value; setEditedItems(newItems); }} />
-                                                   </div>
-                                                   <div className="sm:col-span-3">
-                                                       <label className="text-[11px] text-gray-500 font-bold mb-1 block">รายละเอียดรายการ</label>
-                                                       <input className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.description} onChange={ev => { const newItems = [...editedItems]; newItems[idx].description = ev.target.value; setEditedItems(newItems); }} placeholder="ระบุรายละเอียด..." />
-                                                   </div>
+                                               <div>
+                                                   <label className="text-[11px] text-gray-500 font-bold mb-1 block">รายละเอียดรายการ</label>
+                                                   <input className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.description} onChange={ev => { const newItems = [...editedItems]; newItems[idx].description = ev.target.value; setEditedItems(newItems); }} placeholder="ระบุรายละเอียด..." />
                                                </div>
-                                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                   <div>
+                                                       <label className="text-[11px] text-gray-500 font-bold mb-1 block">วันที่</label>
+                                                       <input type="date" className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.date || ''} onChange={ev => { const newItems = [...editedItems]; newItems[idx].date = ev.target.value; setEditedItems(newItems); }} />
+                                                   </div>
                                                    <div>
                                                        <label className="text-[11px] text-gray-500 font-bold mb-1 block">หมวดหมู่</label>
                                                        <select className="w-full border border-gray-300 p-2 md:p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none" value={item.category} onChange={ev => { const newItems = [...editedItems]; newItems[idx].category = ev.target.value; setEditedItems(newItems); }}>
@@ -2087,12 +2073,12 @@
                 <div className="space-y-4">
                   <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Building2 size={14} /> ข้อมูลองค์กร</label>
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 ml-1">ชื่อบริษัท / องค์กร (แสดงในหน้า Login และ Report)</label>
-                    <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-medium text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.companyName} onChange={e => setSettings({...settings, companyName: e.target.value})} placeholder="เช่น บริษัท แมวเหมียว จำกัด" />
+                    <label className="text-xs font-black text-slate-500 ml-1 block">ชื่อบริษัท / องค์กร (แสดงในหน้า Login และ Report)</label>
+                    <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-medium text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700 outline-none" value={settings.companyName} onChange={e => setSettings({...settings, companyName: e.target.value})} placeholder="เช่น บริษัท แมวเหมียว จำกัด" />
                   </div>
                   <div className="space-y-2 mt-4">
-                    <label className="text-xs font-black text-slate-500 ml-1">ลิงก์เพิ่มเพื่อน LINE (แสดงที่หน้าล็อกอิน ให้พนักงานกดแอด)</label>
-                    <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-medium text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.lineAddFriendUrl} onChange={e => setSettings({...settings, lineAddFriendUrl: e.target.value})} placeholder="เช่น https://line.me/R/ti/p/@yourbotid" />
+                    <label className="text-xs font-black text-slate-500 ml-1 block">ลิงก์เพิ่มเพื่อน LINE (แสดงที่หน้าล็อกอิน ให้พนักงานกดแอด)</label>
+                    <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-medium text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700 outline-none" value={settings.lineAddFriendUrl} onChange={e => setSettings({...settings, lineAddFriendUrl: e.target.value})} placeholder="เช่น https://line.me/R/ti/p/@yourbotid" />
                   </div>
                 </div>
 
@@ -2105,20 +2091,20 @@
                 <div className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-500 ml-1">Google Script URL (แนะนำ)</label>
-                      <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.scriptUrl} onChange={e => setSettings({...settings, scriptUrl: e.target.value})} placeholder="https://script.google.com/macros/s/.../exec" />
+                      <label className="text-xs font-black text-slate-500 ml-1 block">Google Script URL (แนะนำ)</label>
+                      <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700 outline-none" value={settings.scriptUrl} onChange={e => setSettings({...settings, scriptUrl: e.target.value})} placeholder="https://script.google.com/macros/s/.../exec" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-500 ml-1">LINE Channel Token</label>
-                      <textarea rows="3" className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.lineToken} onChange={e => setSettings({...settings, lineToken: e.target.value})} placeholder="Channel Access Token (Long-lived)" />
+                      <label className="text-xs font-black text-slate-500 ml-1 block">LINE Channel Token</label>
+                      <textarea rows="3" className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700 outline-none" value={settings.lineToken} onChange={e => setSettings({...settings, lineToken: e.target.value})} placeholder="Channel Access Token (Long-lived)" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] md:text-xs font-black text-slate-500 ml-1 flex flex-wrap items-center gap-2">Imgbb API Key (ตัวช่วยแปลงรูปเข้า LINE และสำรองกรณี Storage มีปัญหา) <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer" className="text-indigo-500 underline">ขอรับฟรีที่นี่</a></label>
-                      <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={settings.imgbbApiKey} onChange={e => setSettings({...settings, imgbbApiKey: e.target.value})} placeholder="ใส่ Imgbb API Key..." />
+                      <label className="text-[10px] md:text-xs font-black text-slate-500 ml-1 flex flex-wrap items-center gap-2 block">Imgbb API Key (ตัวช่วยแปลงรูปเข้า LINE และสำรองกรณี Storage มีปัญหา) <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer" className="text-indigo-500 underline">ขอรับฟรีที่นี่</a></label>
+                      <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700 outline-none" value={settings.imgbbApiKey} onChange={e => setSettings({...settings, imgbbApiKey: e.target.value})} placeholder="ใส่ Imgbb API Key..." />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-500 ml-1">ทดสอบส่งไปยัง Line User ID</label>
-                      <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700" value={testLineId} onChange={e => setTestLineId(e.target.value)} placeholder="Uxxxxxxxxxxxxxxxxxxxx..." />
+                      <label className="text-xs font-black text-slate-500 ml-1 block">ทดสอบส่งไปยัง Line User ID</label>
+                      <input className="w-full p-4 md:p-5 rounded-2xl bg-slate-50 border-none font-mono text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner text-slate-700 outline-none" value={testLineId} onChange={e => setTestLineId(e.target.value)} placeholder="Uxxxxxxxxxxxxxxxxxxxx..." />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
@@ -2196,11 +2182,11 @@
                  <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-4">
                     <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2"><UserPlus size={18}/> ลงทะเบียนพนักงานใหม่</h3>
                     <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">ชื่อ-นามสกุล</label><input className="w-full p-2 border rounded" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} placeholder="ชื่อพนักงาน" /></div>
-                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">ตำแหน่ง</label><select className="w-full p-2 border rounded" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.EXCLUSIVE}>Exclusive</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select></div>
-                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">สาขา</label><select className="w-full p-2 border rounded" value={newUser.branchId} onChange={e => setNewUser({...newUser, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option></select></div>
-                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">PIN เริ่มต้น</label><input className="w-full p-2 border rounded text-center" value={newUser.pin} maxLength={4} onChange={e => setNewUser({...newUser, pin: e.target.value})} /></div>
-                       <div className="md:col-span-2"><label className="text-xs font-semibold text-green-700 mb-1 block">Line UserID (สำหรับแจ้งเตือน)</label><input className="w-full p-2 border rounded border-green-200 bg-green-50 font-mono text-sm" value={newUser.lineUserId} onChange={e => setNewUser({...newUser, lineUserId: e.target.value})} placeholder="Uxxxxxxxxxxxxxxxxxxxx" /></div>
+                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">ชื่อ-นามสกุล</label><input className="w-full p-2 border rounded outline-none focus:border-blue-400" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} placeholder="ชื่อพนักงาน" /></div>
+                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">ตำแหน่ง</label><select className="w-full p-2 border rounded outline-none focus:border-blue-400" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.EXCLUSIVE}>Exclusive</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select></div>
+                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">สาขา</label><select className="w-full p-2 border rounded outline-none focus:border-blue-400" value={newUser.branchId} onChange={e => setNewUser({...newUser, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option></select></div>
+                       <div><label className="text-xs font-semibold text-blue-700 mb-1 block">PIN เริ่มต้น</label><input className="w-full p-2 border rounded text-center outline-none focus:border-blue-400" value={newUser.pin} maxLength={4} onChange={e => setNewUser({...newUser, pin: e.target.value})} /></div>
+                       <div className="md:col-span-2"><label className="text-xs font-semibold text-green-700 mb-1 block">Line UserID (สำหรับแจ้งเตือน)</label><input className="w-full p-2 border rounded border-green-200 bg-green-50 font-mono text-sm outline-none focus:border-green-400" value={newUser.lineUserId} onChange={e => setNewUser({...newUser, lineUserId: e.target.value})} placeholder="Uxxxxxxxxxxxxxxxxxxxx" /></div>
                        <div className="md:col-span-2"><button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700">บันทึกพนักงานใหม่</button></div>
                     </form>
                  </div>
@@ -2215,14 +2201,14 @@
                                 {editingId === emp.id ? (
                                   <>
                                     <td className="p-4">
-                                       <input className="border p-2 rounded w-full text-sm mb-1" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="ชื่อ-นามสกุล" />
-                                       <input className="border p-2 rounded w-full text-sm font-mono text-pink-600" value={editForm.pin} maxLength={4} onChange={e => setEditForm({...editForm, pin: e.target.value.replace(/[^0-9]/g, '')})} placeholder="PIN 4 หลัก" />
+                                       <input className="border p-2 rounded w-full text-sm mb-1 outline-none focus:border-blue-400" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="ชื่อ-นามสกุล" />
+                                       <input className="border p-2 rounded w-full text-sm font-mono text-pink-600 outline-none focus:border-blue-400" value={editForm.pin} maxLength={4} onChange={e => setEditForm({...editForm, pin: e.target.value.replace(/[^0-9]/g, '')})} placeholder="PIN 4 หลัก" />
                                     </td>
-                                    <td className="p-4"><input className="border p-2 rounded w-full text-sm font-mono" value={editForm.lineUserId} onChange={e => setEditForm({...editForm, lineUserId: e.target.value})} placeholder="Line ID" /></td>
+                                    <td className="p-4"><input className="border p-2 rounded w-full text-sm font-mono outline-none focus:border-blue-400" value={editForm.lineUserId} onChange={e => setEditForm({...editForm, lineUserId: e.target.value})} placeholder="Line ID" /></td>
                                     <td className="p-4">
                                        <div className="flex gap-2 flex-col">
-                                         <select className="border p-2 rounded w-full text-sm" value={editForm.role} onChange={e => setEditForm({...editForm, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.EXCLUSIVE}>Exclusive</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select>
-                                         <select className="border p-2 rounded w-full text-sm" value={editForm.branchId} onChange={e => setEditForm({...editForm, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option></select>
+                                         <select className="border p-2 rounded w-full text-sm outline-none focus:border-blue-400" value={editForm.role} onChange={e => setEditForm({...editForm, role: e.target.value})}><option value={ROLES.EMPLOYEE}>พนักงาน</option><option value={ROLES.MANAGER}>หัวหน้างาน</option><option value={ROLES.EXCLUSIVE}>Exclusive</option><option value={ROLES.ADMIN}>ผู้ดูแลระบบ</option></select>
+                                         <select className="border p-2 rounded w-full text-sm outline-none focus:border-blue-400" value={editForm.branchId} onChange={e => setEditForm({...editForm, branchId: e.target.value})}><option value="">- เลือกสาขา -</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}<option value="HEADQUARTER">สำนักงานใหญ่</option></select>
                                        </div>
                                     </td>
                                     <td className="p-4 text-right flex justify-end gap-2"><button onClick={handleSave} className="text-green-600 bg-green-50 px-3 py-1.5 rounded hover:bg-green-100 text-sm font-bold">บันทึก</button><button onClick={() => setEditingId(null)} className="text-gray-500 bg-gray-50 px-3 py-1.5 rounded hover:bg-gray-100 text-sm">ยกเลิก</button></td>
@@ -2265,7 +2251,7 @@
 
           return (
             <div className="max-w-4xl mx-auto space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm"><h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Building2 className="text-blue-600"/> เพิ่มสาขาใหม่</h3><form onSubmit={handleAdd} className="flex flex-col md:flex-row gap-4 md:items-end"><div className="flex-1"><label className="text-sm text-gray-600 block mb-1">ชื่อสาขา</label><input value={newBranch.name} onChange={e => setNewBranch({...newBranch, name: e.target.value})} className="w-full border p-2 rounded-lg" placeholder="เช่น สาขาเชียงใหม่" /></div><div className="flex-1"><label className="text-sm text-gray-600 block mb-1">ที่ตั้ง/รหัส</label><input value={newBranch.location} onChange={e => setNewBranch({...newBranch, location: e.target.value})} className="w-full border p-2 rounded-lg" placeholder="เช่น CNX-001" /></div><button type="submit" className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium">เพิ่มสาขา</button></form></div>
+              <div className="bg-white p-6 rounded-xl shadow-sm"><h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Building2 className="text-blue-600"/> เพิ่มสาขาใหม่</h3><form onSubmit={handleAdd} className="flex flex-col md:flex-row gap-4 md:items-end"><div className="flex-1"><label className="text-sm text-gray-600 block mb-1">ชื่อสาขา</label><input value={newBranch.name} onChange={e => setNewBranch({...newBranch, name: e.target.value})} className="w-full border p-2 rounded-lg outline-none focus:border-blue-400" placeholder="เช่น สาขาเชียงใหม่" /></div><div className="flex-1"><label className="text-sm text-gray-600 block mb-1">ที่ตั้ง/รหัส</label><input value={newBranch.location} onChange={e => setNewBranch({...newBranch, location: e.target.value})} className="w-full border p-2 rounded-lg outline-none focus:border-blue-400" placeholder="เช่น CNX-001" /></div><button type="submit" className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium">เพิ่มสาขา</button></form></div>
               <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
                 <h3 className="text-lg font-bold p-5 border-b">รายชื่อสาขา ({branches.length})</h3>
                 <div className="overflow-x-auto">
@@ -2405,8 +2391,10 @@
 
           return (
             <div className="flex h-screen paw-bg font-sans overflow-hidden">
+              {/* Desktop Sidebar */}
               <aside className={`hidden md:flex flex-col bg-white/90 backdrop-blur-md shadow-xl border-r border-pink-200 z-10 sidebar-transition relative ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
                 <div className={`p-6 border-b border-pink-100 flex items-center ${isSidebarCollapsed ? 'justify-center px-0 flex-col gap-2' : 'gap-3'}`}>
+                  {/* Hamburger Button */}
                   <button 
                     onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
                     className={`text-pink-500 hover:bg-pink-50 p-2 rounded-lg transition-colors flex-shrink-0 ${isSidebarCollapsed ? '' : 'absolute left-4'}`}
@@ -2465,6 +2453,7 @@
                 </div>
               </aside>
               
+              {/* Mobile Top Header */}
               <div className="md:hidden fixed top-0 w-full bg-white/95 backdrop-blur-md shadow-sm z-30 flex items-center justify-between p-3 px-5 border-b border-pink-100">
                 <div className="flex items-center gap-2">
                   <div className="bg-pink-100 p-1.5 rounded-lg text-pink-600"><Cat size={20} /></div>
@@ -2482,14 +2471,12 @@
                 </div>
               </div>
 
+              {/* Main Content Area */}
               <main className="flex-1 overflow-auto p-4 pt-20 pb-24 md:p-8 md:pt-8 md:pb-8 relative w-full scrollbar-thin scrollbar-thumb-pink-200">
-                <div className="max-w-6xl mx-auto relative z-10 animate-in fade-in">
-                  <ErrorBoundary key={view}>
-                     {renderContent()}
-                  </ErrorBoundary>
-                </div>
+                <div className="max-w-6xl mx-auto relative z-10 animate-in fade-in">{renderContent()}</div>
               </main>
 
+              {/* Mobile Bottom Navigation */}
               <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-pink-100 flex justify-around items-end pb-safe pt-2 px-2 z-40 mobile-bottom-nav">
                  <button onClick={() => {setView('dashboard'); setIsMobileMenuOpen(false);}} className={`flex flex-col items-center justify-center p-2 w-[20%] transition-all ${view==='dashboard'?'text-pink-600 -translate-y-1':'text-gray-400 hover:text-pink-400'}`}>
                     <div className={`p-1.5 rounded-xl ${view==='dashboard'?'bg-pink-50':''}`}><Home size={22} /></div>
@@ -2517,6 +2504,7 @@
                  </button>
               </div>
 
+              {/* Mobile Side Menu Overlay */}
               {isMobileMenuOpen && (
                 <div className="fixed inset-0 bg-pink-900/40 backdrop-blur-sm z-50 md:hidden flex justify-end" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="h-full w-72 bg-white shadow-2xl p-0 flex flex-col animate-in slide-in-from-right-8" onClick={e => e.stopPropagation()}>
